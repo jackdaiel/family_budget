@@ -415,7 +415,7 @@ const DEFAULT_EXP_CATS = {
   '光熱水費':  ['電気代','ガス代','水道代'],
   '食費':      ['食料品','酒類','外食','カフェ'],
   '日用品費':  ['日用品'],
-  '通信費':    ['携帯電話','ネット回線','NHK受信料'],
+  '通信費':    ['携帯電話','NET+SP','NHK受信料'],
   'サブスク費': ['Spotify','YouTube'],
   '交際費':    ['飲み会','プレゼント','冠婚葬祭','会費'],
   'その他':    ['その他'],
@@ -542,6 +542,14 @@ const today = () => {
 // INIT
 // ══════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
+  // マイグレーション: 「ネット回線」→「NET+SP」
+  if (_expCats['通信費']) {
+    const idx = _expCats['通信費'].indexOf('ネット回線');
+    if (idx !== -1) {
+      _expCats['通信費'][idx] = 'NET+SP';
+      savePrefs();
+    }
+  }
   document.getElementById('yearSel').value = String(FY);
   document.getElementById('e-date').value = today();
   initCatGrid();
@@ -1021,12 +1029,13 @@ function addSub(ctype, major) {
   const cats = ctype==='exp' ? _expCats : _incCats;
   cats[major].push(val); inp.value='';
   savePrefs(); renderCatManage(); initCatGrid();
-  showToast('追加しました','success');
+  showToast('追加しました。GASのcreateSummarySheetを再実行するとSSに反映されます', 'success');
 }
 function delSub(ctype, major, i) {
   const cats = ctype==='exp' ? _expCats : _incCats;
   cats[major].splice(i,1);
   savePrefs(); renderCatManage(); initCatGrid();
+  showToast('削除しました。GASのcreateSummarySheetを再実行するとSSに反映されます');
 }
 
 // ══════════════════════════════════════════
