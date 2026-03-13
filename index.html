@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Family Budget</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,700;9..40,800&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sky:    #38b6e8;
+  --sky2:   #1a9fd4;
+  --sky3:   #0d87bb;
+  --sky-lt: #e0f5fd;
+  --sky-bg: #f0faff;
+  --mint:   #2ed8a8;
+  --coral:  #ff6b7a;
+  --sun:    #ffb347;
+  --ink:    #1a2a3a;
+  --muted:  #7a9ab0;
+  --border: #c8e8f5;
+  --paper:  #f8fcff;
+  --white:  #ffffff;
+  --inc-green: #2e9e6b;
+  --inc-lt:    #e6f9f0;
+  --font: 'DM Sans','Noto Sans JP',sans-serif;
+  --radius: 16px; --radius-sm: 10px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:var(--font);background:linear-gradient(160deg,#e8f7fd 0%,#f5fbff 50%,#eaf6f0 100%);min-height:100vh;color:var(--ink);font-size:15px;}
+
+/* HEADER */
+.app-header{background:linear-gradient(135deg,var(--sky) 0%,var(--sky2) 60%,#1abbcc 100%);padding:.85rem 1rem .75rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 3px 16px rgba(26,159,212,.35);}
+.app-title{font-size:1.2rem;font-weight:800;color:#fff;letter-spacing:.04em;display:flex;align-items:center;gap:.4rem;cursor:pointer;user-select:none;}
+.app-title:active{opacity:.8;}
+.header-right{display:flex;align-items:center;gap:.45rem;}
+.year-sel{background:rgba(255,255,255,.2);border:1.5px solid rgba(255,255,255,.5);color:#fff;border-radius:8px;padding:.26rem .5rem;font-family:var(--font);font-size:.82rem;font-weight:700;-webkit-appearance:none;appearance:none;cursor:pointer;}
+.year-sel option{color:var(--ink);background:#fff;}
+.reload-btn{background:rgba(255,255,255,.2);border:1.5px solid rgba(255,255,255,.5);color:#fff;border-radius:8px;padding:.26rem .55rem;font-size:.88rem;cursor:pointer;font-family:var(--font);}
+
+/* TAB */
+.tab-nav{display:flex;background:var(--white);border-bottom:2px solid var(--border);position:sticky;top:56px;z-index:90;box-shadow:0 2px 8px rgba(56,182,232,.08);}
+.tab-btn{flex:1;padding:.6rem .2rem;text-align:center;font-size:.75rem;font-weight:700;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;transition:all .2s;letter-spacing:.01em;font-family:var(--font);}
+.tab-btn.active{color:var(--sky2);border-bottom-color:var(--sky);}
+.tab-btn .ti{font-size:1rem;display:block;margin-bottom:.08rem;}
+
+/* PAGE */
+.page{display:none;padding:1rem;max-width:560px;margin:0 auto;}
+.page.active{display:block;}
+
+/* MODE TOGGLE (収支) */
+.mode-toggle{display:flex;background:rgba(56,182,232,.1);border-radius:12px;padding:3px;margin-bottom:.9rem;}
+.mode-btn{flex:1;padding:.5rem;text-align:center;font-size:.88rem;font-weight:700;border-radius:9px;cursor:pointer;transition:all .2s;color:var(--muted);font-family:var(--font);}
+.mode-btn.active-exp{background:linear-gradient(135deg,var(--coral),#e04040);color:#fff;box-shadow:0 2px 8px rgba(255,107,122,.35);}
+.mode-btn.active-inc{background:linear-gradient(135deg,var(--mint),var(--inc-green));color:#fff;box-shadow:0 2px 8px rgba(46,216,168,.35);}
+
+/* SECTION TITLE */
+.sec-title{font-size:.74rem;font-weight:800;color:var(--sky2);text-transform:uppercase;letter-spacing:.1em;margin:1.1rem 0 .55rem;display:flex;align-items:center;gap:.35rem;}
+.sec-title::before{content:'';display:inline-block;width:4px;height:13px;background:linear-gradient(180deg,var(--sky),var(--mint));border-radius:2px;}
+
+/* CARD */
+.card{background:var(--white);border-radius:var(--radius);box-shadow:0 2px 10px rgba(56,182,232,.12);padding:1rem;border:1px solid var(--border);margin-bottom:.75rem;}
+
+/* FORM */
+.form-group{margin-bottom:.8rem;}
+.form-label{font-size:.73rem;font-weight:700;color:var(--sky3);letter-spacing:.07em;margin-bottom:.3rem;display:block;}
+.form-input,.form-select{width:100%;border:2px solid var(--border);border-radius:var(--radius-sm);padding:.55rem .8rem;font-family:var(--font);font-size:.93rem;background:var(--paper);color:var(--ink);font-weight:500;transition:border-color .15s,box-shadow .15s;-webkit-appearance:none;appearance:none;}
+.form-input:focus,.form-select:focus{outline:none;border-color:var(--sky);box-shadow:0 0 0 3px rgba(56,182,232,.15);background:var(--white);}
+.form-input::placeholder{color:#b0cfe0;font-weight:400;}
+
+/* CAT CHIPS */
+.cat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.4rem;margin-bottom:.3rem;}
+.cat-chip{padding:.48rem .25rem;border-radius:9px;border:2px solid var(--border);text-align:center;font-size:.8rem;font-weight:700;cursor:pointer;background:var(--paper);color:var(--muted);transition:all .15s;font-family:var(--font);line-height:1.25;}
+.cat-chip.selected{background:linear-gradient(135deg,var(--sky),var(--sky2));color:#fff;border-color:var(--sky2);box-shadow:0 2px 8px rgba(56,182,232,.3);}
+.cat-chip.sub{font-size:.76rem;}
+/* 収入カテゴリ */
+.cat-chip.inc-chip.selected{background:linear-gradient(135deg,var(--mint),var(--inc-green));border-color:var(--inc-green);box-shadow:0 2px 8px rgba(46,216,168,.3);}
+
+/* PAYER */
+.payer-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.45rem;}
+.payer-chip{padding:.55rem .25rem;border-radius:9px;border:2px solid var(--border);text-align:center;font-size:.88rem;font-weight:800;cursor:pointer;background:var(--paper);color:var(--muted);transition:all .15s;font-family:var(--font);}
+.payer-chip.sel-kouhi{background:linear-gradient(135deg,var(--mint),#1ab890);color:#fff;border-color:#1ab890;box-shadow:0 2px 8px rgba(46,216,168,.3);}
+.payer-chip.sel-yoko{background:linear-gradient(135deg,#ff6b9d,#e04494);color:#fff;border-color:#e04494;box-shadow:0 2px 8px rgba(255,107,157,.3);}
+.payer-chip.sel-dai{background:linear-gradient(135deg,var(--sky),var(--sky2));color:#fff;border-color:#1a9fd4;box-shadow:0 2px 8px rgba(56,182,232,.3);}
+
+/* PAY TYPE */
+.pay-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.45rem;margin-bottom:.45rem;}
+.pay-chip{padding:.5rem .25rem;border-radius:9px;border:2px solid var(--border);text-align:center;font-size:.8rem;font-weight:700;cursor:pointer;background:var(--paper);color:var(--muted);transition:all .15s;font-family:var(--font);}
+.pay-chip.selected{background:linear-gradient(135deg,var(--sun),#ff8c00);color:#fff;border-color:#ff8c00;box-shadow:0 2px 8px rgba(255,179,71,.3);}
+
+/* DETAIL CHIPS */
+.detail-chips{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.4rem;}
+.detail-chip{padding:.28rem .65rem;border-radius:20px;border:1.5px solid var(--border);font-size:.78rem;font-weight:600;cursor:pointer;background:var(--paper);color:var(--muted);transition:all .15s;font-family:var(--font);}
+.detail-chip.selected{background:var(--sky-lt);color:var(--sky2);border-color:var(--sky);}
+
+/* MEMO INLINE */
+.memo-cand-wrap{position:relative;display:inline-flex;align-items:center;}
+.memo-del-btn{position:absolute;top:-5px;right:-5px;background:var(--coral);color:#fff;border:none;border-radius:50%;width:15px;height:15px;font-size:.58rem;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;font-weight:700;}
+.memo-add-btn{padding:.28rem .6rem;border-radius:20px;border:1.5px dashed var(--sky);background:transparent;color:var(--sky2);font-size:.78rem;font-weight:700;cursor:pointer;font-family:var(--font);}
+
+/* AMOUNT */
+.amount-wrap{position:relative;}
+.amount-wrap .currency{position:absolute;left:.8rem;top:50%;transform:translateY(-50%);font-size:.95rem;font-weight:700;color:var(--sky2);}
+.amount-input{padding-left:1.9rem !important;font-size:1.25rem !important;font-weight:800 !important;text-align:right;}
+
+/* SUBMIT */
+.submit-btn{width:100%;padding:.8rem;border:none;border-radius:var(--radius);background:linear-gradient(135deg,var(--sky),var(--sky2),#1abbcc);color:#fff;font-family:var(--font);font-size:.98rem;font-weight:800;cursor:pointer;letter-spacing:.05em;box-shadow:0 4px 16px rgba(56,182,232,.38);transition:all .15s;margin-top:.4rem;}
+.submit-btn.inc-mode{background:linear-gradient(135deg,var(--mint),var(--inc-green));}
+.submit-btn:active{transform:translateY(1px);}
+.submit-btn:disabled{opacity:.6;cursor:not-allowed;}
+
+/* TOAST */
+.toast{position:fixed;bottom:1.8rem;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:.6rem 1.3rem;border-radius:25px;font-size:.86rem;font-weight:600;opacity:0;transition:all .3s;pointer-events:none;z-index:999;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,.2);}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.toast.success{background:linear-gradient(135deg,var(--mint),#1ab890);}
+.toast.error{background:linear-gradient(135deg,var(--coral),#e04040);}
+
+/* SUMMARY */
+.summary-month-sel{display:flex;gap:.35rem;flex-wrap:wrap;margin-bottom:.75rem;}
+.m-btn{padding:.32rem .6rem;border-radius:20px;border:1.5px solid var(--border);font-size:.78rem;font-weight:700;cursor:pointer;background:var(--paper);color:var(--muted);font-family:var(--font);transition:all .15s;}
+.m-btn.active{background:var(--sky);color:#fff;border-color:var(--sky);}
+.summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:.75rem;}
+.stat-card{background:var(--white);border-radius:var(--radius-sm);border:1px solid var(--border);padding:.75rem .9rem;box-shadow:0 2px 8px rgba(56,182,232,.1);}
+.stat-label{font-size:.7rem;font-weight:700;color:var(--muted);margin-bottom:.18rem;}
+.stat-value{font-size:1.18rem;font-weight:800;color:var(--ink);}
+.stat-value.v-exp{color:var(--coral);}
+.stat-value.v-inc{color:var(--inc-green);}
+.stat-value.v-bal-pos{color:var(--inc-green);}
+.stat-value.v-bal-neg{color:var(--coral);}
+.stat-value.v-dai{color:var(--sky2);}
+.stat-value.v-yoko{color:#e04494;}
+.cat-row{display:flex;align-items:center;padding:.5rem .6rem;border-bottom:1px solid var(--border);}
+.cat-row:last-child{border-bottom:none;}
+.cat-bar-wrap{flex:1;margin:0 .65rem;}
+.cat-bar-bg{background:var(--sky-lt);border-radius:4px;height:6px;overflow:hidden;}
+.cat-bar-fill{background:linear-gradient(90deg,var(--sky),var(--mint));height:100%;border-radius:4px;transition:width .5s;}
+.cat-label{font-size:.8rem;font-weight:700;color:var(--ink);min-width:76px;}
+.cat-amt{font-size:.82rem;font-weight:700;color:var(--sky2);min-width:70px;text-align:right;}
+.payer-bars{display:flex;flex-direction:column;gap:.45rem;}
+.p-bar-row{display:flex;align-items:center;gap:.55rem;}
+.p-bar-name{font-size:.8rem;font-weight:700;min-width:38px;}
+.p-bar-bg{flex:1;background:var(--sky-lt);border-radius:4px;height:13px;overflow:hidden;}
+.p-bar-fill{height:100%;border-radius:4px;transition:width .5s;}
+.p-fill-dai{background:linear-gradient(90deg,var(--sky),var(--sky2));}
+.p-fill-yoko{background:linear-gradient(90deg,#ff6b9d,#e04494);}
+.p-fill-kouhi{background:linear-gradient(90deg,var(--mint),#1ab890);}
+.p-bar-amt{font-size:.8rem;font-weight:700;min-width:68px;text-align:right;}
+
+/* HISTORY */
+.history-filter{display:flex;gap:.35rem;flex-wrap:wrap;margin-bottom:.65rem;}
+.filter-btn{padding:.28rem .65rem;border-radius:20px;border:1.5px solid var(--border);font-size:.78rem;font-weight:700;cursor:pointer;background:var(--paper);color:var(--muted);font-family:var(--font);transition:all .15s;}
+.filter-btn.active{background:var(--sky);color:#fff;border-color:var(--sky);}
+.entry-card{background:var(--white);border-radius:var(--radius-sm);border:1px solid var(--border);padding:.7rem .85rem;margin-bottom:.45rem;display:flex;align-items:center;gap:.65rem;box-shadow:0 1px 5px rgba(56,182,232,.07);}
+.entry-badge{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:1.15rem;flex-shrink:0;}
+.entry-info{flex:1;min-width:0;}
+.entry-main{display:flex;justify-content:space-between;align-items:baseline;}
+.entry-cat{font-size:.86rem;font-weight:700;color:var(--ink);}
+.entry-amt{font-size:.98rem;font-weight:800;color:var(--sky2);}
+.entry-amt.inc{color:var(--inc-green);}
+.entry-sub{font-size:.73rem;color:var(--muted);margin-top:.1rem;display:flex;gap:.45rem;flex-wrap:wrap;align-items:center;}
+.pbadge{padding:.08rem .45rem;border-radius:9px;font-size:.68rem;font-weight:700;}
+.pbadge.大{background:#e0f5fd;color:var(--sky2);}
+.pbadge.洋子{background:#ffe0f0;color:#e04494;}
+.pbadge.公費{background:#e0fdf4;color:#1ab890);}
+.pbadge.収入{background:var(--inc-lt);color:var(--inc-green);}
+.del-btn{background:none;border:none;color:#ccd8e0;font-size:1rem;cursor:pointer;padding:.2rem;border-radius:6px;transition:color .15s;flex-shrink:0;}
+.del-btn:active{color:var(--coral);}
+.empty-msg{text-align:center;color:var(--muted);padding:2.5rem 1rem;font-size:.9rem;font-weight:600;}
+.empty-msg .ei{font-size:2.2rem;margin-bottom:.4rem;}
+
+/* SETTINGS */
+.setting-item{background:var(--white);border-radius:var(--radius-sm);border:1px solid var(--border);padding:.85rem .95rem;margin-bottom:.55rem;box-shadow:0 2px 8px rgba(56,182,232,.09);}
+.setting-title{font-size:.82rem;font-weight:800;color:var(--ink);margin-bottom:.5rem;}
+.tag-edit-wrap{display:flex;flex-wrap:wrap;gap:.32rem;}
+.tag-item{display:flex;align-items:center;background:var(--sky-lt);border:1.5px solid var(--border);border-radius:20px;padding:.2rem .55rem;font-size:.8rem;font-weight:600;color:var(--sky2);cursor:grab;user-select:none;}
+.tag-item.dragging{opacity:.4;}
+.tag-del{background:none;border:none;color:var(--muted);cursor:pointer;margin-left:.28rem;font-size:.82rem;line-height:1;padding:0;}
+.tag-del:hover{color:var(--coral);}
+.tag-add-row{display:flex;gap:.38rem;margin-top:.45rem;}
+.tag-add-input{flex:1;border:2px solid var(--border);border-radius:8px;padding:.38rem .65rem;font-family:var(--font);font-size:.82rem;background:var(--paper);color:var(--ink);}
+.tag-add-input:focus{outline:none;border-color:var(--sky);}
+.tag-add-btn{padding:.38rem .75rem;background:var(--sky);color:#fff;border:none;border-radius:8px;font-family:var(--font);font-size:.82rem;font-weight:700;cursor:pointer;}
+
+/* CALENDAR */
+.cal-wrap{position:relative;}
+.cal-popup{position:absolute;top:calc(100% + 5px);left:0;z-index:200;background:var(--white);border:2px solid var(--border);border-radius:var(--radius);box-shadow:0 8px 30px rgba(56,182,232,.2);padding:.55rem;width:272px;display:none;}
+.cal-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:.45rem;}
+.cal-nav{background:var(--sky-lt);border:none;color:var(--sky2);font-size:1rem;border-radius:7px;padding:.18rem .48rem;cursor:pointer;font-weight:800;font-family:var(--font);}
+.cal-title{font-size:.88rem;font-weight:800;color:var(--ink);}
+.cal-today-btn{font-size:.7rem;padding:.16rem .45rem;border:1.5px solid var(--sky);background:var(--sky-lt);color:var(--sky2);border-radius:6px;cursor:pointer;font-weight:700;font-family:var(--font);}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
+.cal-wday{text-align:center;font-size:.7rem;font-weight:700;color:var(--muted);padding:.12rem 0;}
+.cal-wday.sun{color:var(--coral);}.cal-wday.sat{color:var(--sky2);}
+.cal-day{text-align:center;padding:.3rem .1rem;border-radius:7px;font-size:.8rem;font-weight:600;cursor:pointer;transition:all .1s;color:var(--ink);}
+.cal-day:hover{background:var(--sky-lt);}
+.cal-day.cal-today{background:var(--sky-lt);color:var(--sky2);font-weight:800;}
+.cal-day.cal-sel{background:var(--sky);color:#fff;font-weight:800;}
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loading" style="display:none;position:fixed;inset:0;background:rgba(240,250,255,.85);display:none;align-items:center;justify-content:center;z-index:999;">
+  <div style="width:42px;height:42px;border:4px solid var(--sky-lt);border-top-color:var(--sky);border-radius:50%;animation:spin .8s linear infinite;"></div>
+</div>
+<style>@keyframes spin{to{transform:rotate(360deg);}}</style>
+
+<!-- HEADER -->
+<header class="app-header">
+  <div class="app-title" onclick="showTab('entry')">🏠 Family Budget</div>
+  <div class="header-right">
+    <select class="year-sel" id="yearSel" onchange="changeYear(this.value)">
+      <option value="2024">2024年度</option>
+      <option value="2025">2025年度</option>
+      <option value="2026">2026年度</option>
+      <option value="2027">2027年度</option>
+    </select>
+    <button class="reload-btn" onclick="loadData()">🔄</button>
+  </div>
+</header>
+
+<!-- TAB -->
+<nav class="tab-nav">
+  <div class="tab-btn active" onclick="showTab('entry')" id="tab-entry"><span class="ti">✏️</span>記録</div>
+  <div class="tab-btn" onclick="showTab('summary')" id="tab-summary"><span class="ti">📊</span>集計</div>
+  <div class="tab-btn" onclick="showTab('history')" id="tab-history"><span class="ti">📋</span>履歴</div>
+  <div class="tab-btn" onclick="showTab('settings')" id="tab-settings"><span class="ti">⚙️</span>設定</div>
+</nav>
+
+<!-- 記録ページ -->
+<div class="page active" id="page-entry">
+  <div class="sec-title">記録</div>
+  <div class="card">
+
+    <!-- 収支切り替え -->
+    <div class="mode-toggle">
+      <div class="mode-btn active-exp" id="mode-exp" onclick="setMode('exp')">💸 支出</div>
+      <div class="mode-btn" id="mode-inc" onclick="setMode('inc')">💰 収入</div>
+    </div>
+
+    <!-- 日付 -->
+    <div class="form-group">
+      <label class="form-label">📅 日付</label>
+      <div class="cal-wrap">
+        <input type="text" class="form-input" id="e-date" readonly
+               onclick="toggleCal()" placeholder="日付を選択" style="cursor:pointer">
+        <div class="cal-popup" id="e-cal"></div>
+      </div>
+    </div>
+
+    <!-- 大科目 -->
+    <div class="form-group">
+      <label class="form-label">📂 大科目</label>
+      <div class="cat-grid" id="major-grid"></div>
+    </div>
+
+    <!-- 中科目 -->
+    <div class="form-group" id="minor-wrap" style="display:none">
+      <label class="form-label">📌 中科目</label>
+      <div class="cat-grid" id="minor-grid"></div>
+    </div>
+
+    <!-- 支払者 -->
+    <div class="form-group">
+      <label class="form-label">👤 支払者</label>
+      <div class="payer-grid">
+        <div class="payer-chip" id="pc-kouhi" onclick="onPayerSelect('公費')">公費</div>
+        <div class="payer-chip" id="pc-yoko"  onclick="onPayerSelect('洋子')">洋子</div>
+        <div class="payer-chip" id="pc-dai"   onclick="onPayerSelect('大')">大</div>
+      </div>
+    </div>
+
+    <!-- 決済 -->
+    <div class="form-group" id="pay-wrap">
+      <label class="form-label">💳 決済種別</label>
+      <div class="pay-grid">
+        <div class="pay-chip" id="pay-card" onclick="onPayTypeSelect('カード')">💳 カード</div>
+        <div class="pay-chip" id="pay-qr"   onclick="onPayTypeSelect('QR')">📱 QR</div>
+        <div class="pay-chip" id="pay-cash" onclick="onPayTypeSelect('現金')">💴 現金</div>
+      </div>
+      <div id="detail-wrap" style="display:none">
+        <div class="detail-chips" id="detail-chips"></div>
+        <input type="text" class="form-input" id="detail-input"
+               placeholder="または直接入力…" style="margin-top:.45rem;font-size:.88rem;"
+               oninput="onDetailInput(this.value)">
+      </div>
+    </div>
+
+    <!-- 金額 -->
+    <div class="form-group">
+      <label class="form-label">💰 金額</label>
+      <div class="amount-wrap">
+        <span class="currency">¥</span>
+        <input type="number" class="form-input amount-input" id="e-amount"
+               placeholder="0" min="0" inputmode="numeric">
+      </div>
+    </div>
+
+    <!-- メモ -->
+    <div class="form-group">
+      <label class="form-label">📝 メモ（任意）</label>
+      <div class="detail-chips" id="memo-chips" style="margin-bottom:.4rem"></div>
+      <input type="text" class="form-input" id="e-memo"
+             placeholder="例：スーパーでまとめ買い" oninput="onMemoInput(this.value)">
+    </div>
+
+    <button class="submit-btn" id="submit-btn" onclick="submitEntry()">✚ 記録する</button>
+  </div>
+</div>
+
+<!-- 集計ページ -->
+<div class="page" id="page-summary">
+  <div class="sec-title">月別集計</div>
+  <div class="summary-month-sel" id="month-sel"></div>
+  <div class="summary-grid" id="stat-cards"></div>
+  <div class="card">
+    <div class="sec-title" style="margin-top:0">カテゴリ別支出</div>
+    <div id="cat-summary-list"></div>
+  </div>
+  <div class="card">
+    <div class="sec-title" style="margin-top:0">支払者別</div>
+    <div class="payer-bars" id="payer-bars"></div>
+  </div>
+</div>
+
+<!-- 履歴ページ -->
+<div class="page" id="page-history">
+  <div class="sec-title">履歴</div>
+  <div class="history-filter" id="history-filter">
+    <div class="filter-btn active" onclick="filterHistory('')"   data-f="">すべて</div>
+    <div class="filter-btn" onclick="filterHistory('支出')"      data-f="支出">支出</div>
+    <div class="filter-btn" onclick="filterHistory('収入')"      data-f="収入">収入</div>
+    <div class="filter-btn" onclick="filterHistory('大')"        data-f="大">大</div>
+    <div class="filter-btn" onclick="filterHistory('洋子')"      data-f="洋子">洋子</div>
+    <div class="filter-btn" onclick="filterHistory('公費')"      data-f="公費">公費</div>
+  </div>
+  <div id="history-list"></div>
+</div>
+
+<!-- 設定ページ -->
+<div class="page" id="page-settings">
+  <div class="sec-title">候補の管理</div>
+  <div class="setting-item">
+    <div class="setting-title">💳 カード詳細 <span style="font-size:.7rem;color:var(--muted);font-weight:400">（ドラッグで並び替え）</span></div>
+    <div class="tag-edit-wrap" id="card-tags" data-type="card"></div>
+    <div class="tag-add-row">
+      <input class="tag-add-input" id="card-add-input" placeholder="例：住信SBIcard">
+      <button class="tag-add-btn" onclick="addTag('card')">追加</button>
+    </div>
+  </div>
+  <div class="setting-item">
+    <div class="setting-title">📱 QR・電子マネー詳細 <span style="font-size:.7rem;color:var(--muted);font-weight:400">（ドラッグで並び替え）</span></div>
+    <div class="tag-edit-wrap" id="qr-tags" data-type="qr"></div>
+    <div class="tag-add-row">
+      <input class="tag-add-input" id="qr-add-input" placeholder="例：iD">
+      <button class="tag-add-btn" onclick="addTag('qr')">追加</button>
+    </div>
+  </div>
+  <div class="setting-item">
+    <div class="setting-title">📂 カテゴリ管理（中科目の追加・削除） <span style="font-size:.7rem;color:var(--muted);font-weight:400">（ドラッグで並び替え）</span></div>
+    <div id="cat-manage-list"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════════
+const GAS_URL    = 'https://script.google.com/macros/s/AKfycbwx0cgLdRLQLUItKYmGlBLkavkYF2vwQdKVW1lvgF-Q_MDENaTkuBTe65OO6I0alh9eWw/exec';
+const ACCESS_KEY = 'kazoku2026secure';
+
+// ══════════════════════════════════════════
+// DEFAULTS
+// ══════════════════════════════════════════
+const DEFAULT_EXP_CATS = {
+  '住居費':    ['マンション管理費','固定資産税','その他'],
+  '光熱水費':  ['電気代','ガス代','水道代'],
+  '食費':      ['食料品','酒類','外食','カフェ'],
+  '日用品費':  ['日用品'],
+  '通信費':    ['携帯電話','ネット回線','NHK受信料'],
+  'サブスク費': ['Spotify','YouTube'],
+  '交際費':    ['飲み会','プレゼント','冠婚葬祭','会費'],
+  'その他':    ['その他'],
+};
+const DEFAULT_INC_CATS = {
+  '給与・賞与': ['給与','賞与'],
+  '振込':       ['大','洋子'],
+  'その他収入': ['その他'],
+};
+const DEFAULT_CARDS = ['楽天card','住信SBIcard','イオンcard','三井住友card'];
+const DEFAULT_QR    = ['楽天Pay','iD','PayPay','Suica'];
+const DEFAULT_MEMOS = {
+  '住居費':    ['管理組合'],
+  '光熱水費':  ['東北電力','東北ガス','仙台市水道'],
+  '食費':      ['ヨークベニマル','イオン','コープ','コンビニ'],
+  '日用品費':  ['ドラッグストア','ネット通販'],
+  '通信費':    ['ソフトバンク','楽天モバイル'],
+  'サブスク費': ['月額','年額'],
+  '交際費':    ['飲み会','お祝い','香典'],
+  'その他':    ['その他'],
+  '給与・賞与': ['給与振込','賞与'],
+  '振込':      ['毎月振込'],
+  'その他収入': [],
+};
+const CAT_ICONS = {
+  '住居費':'🏠','光熱水費':'💡','食費':'🍱','日用品費':'🛒',
+  '通信費':'📡','サブスク費':'🎵','交際費':'🥂','その他':'📦',
+  '給与・賞与':'💼','振込':'🏦','その他収入':'💹',
+};
+
+// ══════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════
+function calcCurrentFY() {
+  const now = new Date(new Date().getTime() + 9*60*60*1000);
+  let m = now.getMonth()+1, d = now.getDate(), y = now.getFullYear();
+  if (d <= 20) { m--; if (m === 0) { m = 12; y--; } }
+  return m >= 4 ? y : y - 1;
+}
+let FY = calcCurrentFY();
+let _cache   = [];
+let _loaded  = false;
+let _submitting = false;
+let _mode    = 'exp'; // 'exp' | 'inc'
+let selMajor = '', selMinor = '', _selPayer = '', _selPay = '', selDetail = '';
+let histFilter = '';
+let sumMonth = -1;
+
+let _expCats  = JSON.parse(localStorage.getItem('kz_expcats') || 'null') || JSON.parse(JSON.stringify(DEFAULT_EXP_CATS));
+let _incCats  = JSON.parse(localStorage.getItem('kz_inccats') || 'null') || JSON.parse(JSON.stringify(DEFAULT_INC_CATS));
+let _cards    = JSON.parse(localStorage.getItem('kz_cards')   || 'null') || [...DEFAULT_CARDS];
+let _qrs      = JSON.parse(localStorage.getItem('kz_qrs')     || 'null') || [...DEFAULT_QR];
+let _memos    = JSON.parse(localStorage.getItem('kz_memos')   || 'null') || JSON.parse(JSON.stringify(DEFAULT_MEMOS));
+
+function savePrefs() {
+  localStorage.setItem('kz_expcats', JSON.stringify(_expCats));
+  localStorage.setItem('kz_inccats', JSON.stringify(_incCats));
+  localStorage.setItem('kz_cards',   JSON.stringify(_cards));
+  localStorage.setItem('kz_qrs',     JSON.stringify(_qrs));
+  localStorage.setItem('kz_memos',   JSON.stringify(_memos));
+}
+
+// ══════════════════════════════════════════
+// GAS
+// ══════════════════════════════════════════
+async function gasFetch() {
+  const res = await fetch(`${GAS_URL}?key=${ACCESS_KEY}`);
+  return await res.json();
+}
+async function gasPost(body) {
+  const payload = encodeURIComponent(JSON.stringify(body));
+  const res = await fetch(`${GAS_URL}?key=${ACCESS_KEY}&payload=${payload}`);
+  return await res.json();
+}
+
+async function loadData(silent=false) {
+  if (!silent) showToast('読み込み中…');
+  try {
+    const res = await gasFetch();
+    _cache = (res.rows || []).map(rowToEntry).filter(Boolean);
+    _loaded = true;
+    if (!silent) showToast('読み込み完了', 'success');
+    renderAll();
+  } catch(e) { showToast('読み込みエラー', 'error'); }
+}
+
+function rowToEntry(r) {
+  if (!r[0]) return null;
+  return {
+    id: String(r[0]), date: String(r[1]||''),
+    major: String(r[2]||''), minor: String(r[3]||''),
+    payer: String(r[4]||''), payType: String(r[5]||''),
+    payDetail: String(r[6]||''), amount: parseFloat(r[7])||0,
+    memo: String(r[8]||''), type: String(r[9]||'支出'),
+  };
+}
+
+// ══════════════════════════════════════════
+// 年度・月判定
+// ══════════════════════════════════════════
+function getFY(dateStr) {
+  const d = new Date(dateStr);
+  let m = d.getMonth()+1, day = d.getDate(), y = d.getFullYear();
+  if (day<=20){m--;if(m===0){m=12;y--;}}
+  return m>=4?y:y-1;
+}
+function getFMI(dateStr) {
+  const d = new Date(dateStr);
+  let m = d.getMonth()+1, day = d.getDate(), y = d.getFullYear();
+  if (day<=20){m--;if(m===0){m=12;y--;}}
+  return m>=4?m-4:m+8;
+}
+function isFY(e) { return getFY(e.date) === FY; }
+function fmtAmt(n) { return '¥' + Math.abs(n).toLocaleString('ja-JP'); }
+const today = () => {
+  const jst = new Date(new Date().getTime()+9*60*60*1000);
+  return jst.toISOString().slice(0,10);
+};
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('yearSel').value = String(FY);
+  document.getElementById('e-date').value = today();
+  initCatGrid();
+  loadData();
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.cal-wrap')) closeCal();
+  });
+});
+
+function changeYear(y) { FY = parseInt(y); renderAll(); }
+function renderAll() { renderSummary(); renderHistory(); }
+
+// ══════════════════════════════════════════
+// MODE (収支切り替え)
+// ══════════════════════════════════════════
+function setMode(m) {
+  _mode = m;
+  document.getElementById('mode-exp').className = 'mode-btn' + (m==='exp'?' active-exp':'');
+  document.getElementById('mode-inc').className = 'mode-btn' + (m==='inc'?' active-inc':'');
+  document.getElementById('pay-wrap').style.display = m==='exp' ? '' : 'none';
+  document.getElementById('submit-btn').className  = 'submit-btn' + (m==='inc'?' inc-mode':'');
+  selMajor=''; selMinor=''; _selPay=''; selDetail='';
+  document.getElementById('minor-wrap').style.display='none';
+  document.getElementById('detail-wrap').style.display='none';
+  initCatGrid();
+  renderMemoChips();
+}
+
+// ══════════════════════════════════════════
+// CATEGORY GRID
+// ══════════════════════════════════════════
+function initCatGrid() {
+  const cats = _mode === 'exp' ? _expCats : _incCats;
+  const grid = document.getElementById('major-grid');
+  grid.innerHTML = Object.keys(cats).map(m =>
+    `<div class="cat-chip${_mode==='inc'?' inc-chip':''}" onclick="selMajorFn('${m}')">${CAT_ICONS[m]||'📁'} ${m}</div>`
+  ).join('');
+  // 既選択を復元
+  if (selMajor) {
+    grid.querySelectorAll('.cat-chip').forEach(c =>
+      c.classList.toggle('selected', c.textContent.includes(selMajor))
+    );
+  }
+}
+
+function selMajorFn(m) {
+  selMajor = m; selMinor = '';
+  document.querySelectorAll('#major-grid .cat-chip').forEach(c =>
+    c.classList.toggle('selected', c.textContent.trim().includes(m))
+  );
+  const cats = _mode === 'exp' ? _expCats : _incCats;
+  const subs = cats[m] || [];
+  const wrap = document.getElementById('minor-wrap');
+  const grid = document.getElementById('minor-grid');
+  if (subs.length) {
+    grid.innerHTML = subs.map(s =>
+      `<div class="cat-chip sub${_mode==='inc'?' inc-chip':''}" onclick="selMinorFn('${s}')">${s}</div>`
+    ).join('');
+    wrap.style.display = 'block';
+  } else {
+    wrap.style.display = 'none';
+  }
+  renderMemoChips();
+}
+
+function selMinorFn(s) {
+  selMinor = s;
+  document.querySelectorAll('#minor-grid .cat-chip').forEach(c =>
+    c.classList.toggle('selected', c.textContent.trim() === s)
+  );
+}
+
+// ══════════════════════════════════════════
+// PAYER
+// ══════════════════════════════════════════
+function onPayerSelect(p) {
+  _selPayer = p;
+  const map = {公費:'sel-kouhi', 洋子:'sel-yoko', 大:'sel-dai'};
+  ['pc-kouhi','pc-yoko','pc-dai'].forEach(id => {
+    document.getElementById(id).className = 'payer-chip';
+  });
+  const ids = {公費:'pc-kouhi', 洋子:'pc-yoko', 大:'pc-dai'};
+  if (ids[p]) document.getElementById(ids[p]).classList.add(map[p]);
+}
+
+// ══════════════════════════════════════════
+// PAY TYPE
+// ══════════════════════════════════════════
+function onPayTypeSelect(t) {
+  _selPay = t; selDetail = '';
+  ['pay-card','pay-qr','pay-cash'].forEach(id =>
+    document.getElementById(id).classList.remove('selected')
+  );
+  const ids = {カード:'pay-card', QR:'pay-qr', 現金:'pay-cash'};
+  if (ids[t]) document.getElementById(ids[t]).classList.add('selected');
+
+  const wrap  = document.getElementById('detail-wrap');
+  const chips = document.getElementById('detail-chips');
+  const inp   = document.getElementById('detail-input');
+  if (t==='カード' || t==='QR') {
+    const list = t==='カード' ? _cards : _qrs;
+    chips.innerHTML = list.map(d =>
+      `<div class="detail-chip" onclick="selDetailFn('${d}')">${d}</div>`
+    ).join('');
+    inp.value = '';
+    wrap.style.display = 'block';
+  } else {
+    wrap.style.display = 'none';
+  }
+}
+
+function selDetailFn(d) {
+  selDetail = d;
+  document.getElementById('detail-input').value = d;
+  document.querySelectorAll('#detail-chips .detail-chip').forEach(c =>
+    c.classList.toggle('selected', c.textContent === d)
+  );
+}
+function onDetailInput(v) {
+  selDetail = v;
+  document.querySelectorAll('#detail-chips .detail-chip').forEach(c => c.classList.remove('selected'));
+}
+
+// ══════════════════════════════════════════
+// MEMO
+// ══════════════════════════════════════════
+function renderMemoChips() {
+  const el = document.getElementById('memo-chips');
+  if (!el) return;
+  const list = _memos[selMajor] || [];
+  el.innerHTML = list.map((m,i) =>
+    `<span class="memo-cand-wrap">` +
+    `<div class="detail-chip" onclick="selMemoFn('${m.replace(/'/g,"&#39;")}')">${m}</div>` +
+    `<button class="memo-del-btn" onclick="delMemoCand('${selMajor}',${i})">×</button>` +
+    `</span>`
+  ).join('') +
+  (selMajor ? `<button class="memo-add-btn" onclick="addMemoCandInline()">＋</button>` : '');
+}
+
+function selMemoFn(m) {
+  document.getElementById('e-memo').value = m;
+  document.querySelectorAll('#memo-chips .detail-chip').forEach(c =>
+    c.classList.toggle('selected', c.textContent === m)
+  );
+}
+function onMemoInput(v) {
+  document.querySelectorAll('#memo-chips .detail-chip').forEach(c => c.classList.remove('selected'));
+}
+function delMemoCand(major, i) {
+  if (!_memos[major]) return;
+  _memos[major].splice(i,1); savePrefs(); renderMemoChips();
+}
+function addMemoCandInline() {
+  const val = prompt(`「${selMajor}」のメモ候補を追加：`);
+  if (!val || !val.trim()) return;
+  if (!_memos[selMajor]) _memos[selMajor] = [];
+  _memos[selMajor].push(val.trim()); savePrefs(); renderMemoChips();
+}
+
+// ══════════════════════════════════════════
+// SUBMIT
+// ══════════════════════════════════════════
+async function submitEntry() {
+  if (_submitting) return;
+  const date   = document.getElementById('e-date').value;
+  const amount = parseFloat(document.getElementById('e-amount').value);
+  const memo   = document.getElementById('e-memo').value.trim();
+
+  if (!date)   { showToast('日付を選択してください','error'); return; }
+  if (!selMajor) { showToast('大科目を選択してください','error'); return; }
+  if (!_selPayer){ showToast('支払者を選択してください','error'); return; }
+  if (_mode==='exp' && !_selPay){ showToast('決済種別を選択してください','error'); return; }
+  if (!amount||amount<=0){ showToast('金額を入力してください','error'); return; }
+
+  _submitting = true;
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+
+  const id  = Date.now();
+  const jst = new Date(new Date().getTime()+9*60*60*1000);
+  const ts  = jst.toISOString().replace('T',' ').slice(0,19);
+  // row: [ID, 日付, 大科目, 中科目, 支払者, 決済種別, 決済詳細, 金額, メモ, 収支種別, 入力日時]
+  const row = [id, date, selMajor, selMinor, _selPayer, _selPay, selDetail, amount, memo, _mode==='inc'?'収入':'支出', ts];
+  try {
+    const res = await gasPost({action:'append', row});
+    if (res.status==='ok') {
+      _cache.push(rowToEntry(row));
+      showToast(_mode==='inc'?'✓ 収入を記録しました！':'✓ 支出を記録しました！','success');
+      resetForm();
+      renderAll();
+    } else { showToast('エラー: '+(res.message||''),'error'); }
+  } catch(e){ showToast('通信エラー','error'); }
+  _submitting = false;
+  btn.disabled = false;
+}
+
+function resetForm() {
+  selMajor=''; selMinor=''; _selPayer=''; _selPay=''; selDetail='';
+  ['pc-kouhi','pc-yoko','pc-dai'].forEach(id =>
+    document.getElementById(id).className='payer-chip'
+  );
+  ['pay-card','pay-qr','pay-cash'].forEach(id =>
+    document.getElementById(id).classList.remove('selected')
+  );
+  document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('selected'));
+  document.getElementById('minor-wrap').style.display='none';
+  document.getElementById('detail-wrap').style.display='none';
+  document.getElementById('e-amount').value='';
+  document.getElementById('e-memo').value='';
+  document.getElementById('e-date').value=today();
+  renderMemoChips();
+}
+
+// ══════════════════════════════════════════
+// SUMMARY
+// ══════════════════════════════════════════
+const MONTHS_JP=['４月','５月','６月','７月','８月','９月','１０月','１１月','１２月','１月','２月','３月'];
+
+function renderSummary() {
+  const data = _cache.filter(e => isFY(e));
+  const msel = document.getElementById('month-sel');
+  msel.innerHTML = `<div class="m-btn ${sumMonth===-1?'active':''}" onclick="setSumMonth(-1)">全期間</div>` +
+    MONTHS_JP.map((m,i) =>
+      `<div class="m-btn ${sumMonth===i?'active':''}" onclick="setSumMonth(${i})">${m}</div>`
+    ).join('');
+
+  const filtered = sumMonth===-1 ? data : data.filter(e => getFMI(e.date)===sumMonth);
+  const exp = filtered.filter(e => e.type!=='収入');
+  const inc = filtered.filter(e => e.type==='収入');
+  const totExp = exp.reduce((a,e)=>a+e.amount,0);
+  const totInc = inc.reduce((a,e)=>a+e.amount,0);
+  const bal    = totInc - totExp;
+  const dai    = exp.filter(e=>e.payer==='大').reduce((a,e)=>a+e.amount,0);
+  const yoko   = exp.filter(e=>e.payer==='洋子').reduce((a,e)=>a+e.amount,0);
+
+  document.getElementById('stat-cards').innerHTML = `
+    <div class="stat-card"><div class="stat-label">支出合計</div><div class="stat-value v-exp">${fmtAmt(totExp)}</div></div>
+    <div class="stat-card"><div class="stat-label">収入合計</div><div class="stat-value v-inc">${fmtAmt(totInc)}</div></div>
+    <div class="stat-card"><div class="stat-label">収支</div><div class="stat-value ${bal>=0?'v-bal-pos':'v-bal-neg'}">${bal>=0?'+':'−'}${fmtAmt(bal)}</div></div>
+    <div class="stat-card"><div class="stat-label">件数</div><div class="stat-value">${filtered.length}件</div></div>
+    <div class="stat-card"><div class="stat-label">大（支出）</div><div class="stat-value v-dai">${fmtAmt(dai)}</div></div>
+    <div class="stat-card"><div class="stat-label">洋子（支出）</div><div class="stat-value v-yoko">${fmtAmt(yoko)}</div></div>
+  `;
+
+  // カテゴリ別（支出のみ）
+  const byMajor = {};
+  exp.forEach(e => { byMajor[e.major]=(byMajor[e.major]||0)+e.amount; });
+  const sorted = Object.entries(byMajor).sort((a,b)=>b[1]-a[1]);
+  const max = sorted[0]?.[1]||1;
+  document.getElementById('cat-summary-list').innerHTML = sorted.length
+    ? sorted.map(([k,v])=>
+        `<div class="cat-row">
+          <span class="cat-label">${CAT_ICONS[k]||'📁'} ${k}</span>
+          <div class="cat-bar-wrap"><div class="cat-bar-bg"><div class="cat-bar-fill" style="width:${v/max*100}%"></div></div></div>
+          <span class="cat-amt">${fmtAmt(v)}</span>
+        </div>`
+      ).join('')
+    : '<div class="empty-msg">データなし</div>';
+
+  // 支払者別
+  const pmax = Math.max(dai,yoko,1);
+  const kouhi = exp.filter(e=>e.payer==='公費').reduce((a,e)=>a+e.amount,0);
+  document.getElementById('payer-bars').innerHTML = `
+    <div class="p-bar-row"><span class="p-bar-name">大</span><div class="p-bar-bg"><div class="p-bar-fill p-fill-dai" style="width:${dai/Math.max(dai,yoko,kouhi,1)*100}%"></div></div><span class="p-bar-amt">${fmtAmt(dai)}</span></div>
+    <div class="p-bar-row"><span class="p-bar-name">洋子</span><div class="p-bar-bg"><div class="p-bar-fill p-fill-yoko" style="width:${yoko/Math.max(dai,yoko,kouhi,1)*100}%"></div></div><span class="p-bar-amt">${fmtAmt(yoko)}</span></div>
+    <div class="p-bar-row"><span class="p-bar-name">公費</span><div class="p-bar-bg"><div class="p-bar-fill p-fill-kouhi" style="width:${kouhi/Math.max(dai,yoko,kouhi,1)*100}%"></div></div><span class="p-bar-amt">${fmtAmt(kouhi)}</span></div>
+  `;
+}
+function setSumMonth(i) { sumMonth=i; renderSummary(); }
+
+// ══════════════════════════════════════════
+// HISTORY
+// ══════════════════════════════════════════
+function renderHistory() {
+  let data = _cache.filter(e => isFY(e)).sort((a,b)=>b.date.localeCompare(a.date));
+  if (histFilter==='支出') data = data.filter(e => e.type!=='収入');
+  else if (histFilter==='収入') data = data.filter(e => e.type==='収入');
+  else if (histFilter) data = data.filter(e => e.payer===histFilter);
+
+  const list = document.getElementById('history-list');
+  if (!data.length) {
+    list.innerHTML='<div class="empty-msg"><div class="ei">📭</div>記録がありません</div>';
+    return;
+  }
+  const catBg = m => ({'住居費':'#dff0ff','光熱水費':'#fff8d4','食費':'#e8fdf0','日用品費':'#f0e8ff','通信費':'#e0f8ff','サブスク費':'#ffe8f8','交際費':'#fff0e8','給与・賞与':'#e6f9f0','振込':'#e6f9f0','その他収入':'#e6f9f0'}[m]||'#f0f8ff');
+  list.innerHTML = data.map(e => {
+    const isInc = e.type==='収入';
+    return `<div class="entry-card">
+      <div class="entry-badge" style="background:${catBg(e.major)}">${CAT_ICONS[e.major]||'📁'}</div>
+      <div class="entry-info">
+        <div class="entry-main">
+          <span class="entry-cat">${e.major}${e.minor?' › '+e.minor:''}</span>
+          <span class="entry-amt${isInc?' inc':''}">${isInc?'+':''}${fmtAmt(e.amount)}</span>
+        </div>
+        <div class="entry-sub">
+          <span class="pbadge ${isInc?'収入':e.payer}">${isInc?'収入':e.payer}</span>
+          <span>${e.date}</span>
+          ${!isInc&&e.payType?`<span>${e.payType}${e.payDetail?' · '+e.payDetail:''}</span>`:''}
+          ${e.memo?`<span>${e.memo}</span>`:''}
+        </div>
+      </div>
+      <button class="del-btn" onclick="delEntry('${e.id}')">🗑</button>
+    </div>`;
+  }).join('');
+}
+
+function filterHistory(f) {
+  histFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.f===f)
+  );
+  renderHistory();
+}
+
+async function delEntry(id) {
+  if (!confirm('この記録を削除しますか？')) return;
+  try {
+    const res = await gasPost({action:'delete', id});
+    if (res.status==='ok') {
+      _cache = _cache.filter(e => e.id!==id);
+      showToast('削除しました','success');
+      renderAll();
+    } else showToast('削除エラー','error');
+  } catch(e){ showToast('通信エラー','error'); }
+}
+
+// ══════════════════════════════════════════
+// SETTINGS（ドラッグ並び替え）
+// ══════════════════════════════════════════
+function buildSettingsPage() {
+  renderDragList('card-tags', _cards, 'card');
+  renderDragList('qr-tags',   _qrs,   'qr');
+  renderCatManage();
+}
+
+function renderDragList(elId, list, type) {
+  const el = document.getElementById(elId);
+  el.innerHTML = list.map((t,i) =>
+    `<div class="tag-item" draggable="true" data-index="${i}" data-type="${type}"
+          ondragstart="onDragStart(event)" ondragover="onDragOver(event)"
+          ondrop="onDrop(event,'${type}')" ondragend="onDragEnd(event)">
+      ☰ ${t}
+      <button class="tag-del" onclick="delTag('${type}',${i})">✕</button>
+    </div>`
+  ).join('');
+}
+
+let _dragIdx = -1;
+function onDragStart(e) {
+  _dragIdx = parseInt(e.currentTarget.dataset.index);
+  e.currentTarget.classList.add('dragging');
+}
+function onDragOver(e) { e.preventDefault(); }
+function onDrop(e, type) {
+  e.preventDefault();
+  const toIdx = parseInt(e.currentTarget.dataset.index);
+  if (_dragIdx === toIdx) return;
+  const list = type==='card' ? _cards : _qrs;
+  const [moved] = list.splice(_dragIdx, 1);
+  list.splice(toIdx, 0, moved);
+  savePrefs();
+  renderDragList(type==='card'?'card-tags':'qr-tags', list, type);
+}
+function onDragEnd(e) { e.currentTarget.classList.remove('dragging'); }
+
+function addTag(type) {
+  const inp = document.getElementById(type+'-add-input');
+  const val = inp.value.trim();
+  if (!val) return;
+  if (type==='card') _cards.push(val);
+  else if (type==='qr') _qrs.push(val);
+  inp.value='';
+  savePrefs(); buildSettingsPage();
+  showToast('追加しました','success');
+}
+function delTag(type, i) {
+  if (type==='card') _cards.splice(i,1);
+  else if (type==='qr') _qrs.splice(i,1);
+  savePrefs(); buildSettingsPage();
+}
+
+function renderCatManage() {
+  const el = document.getElementById('cat-manage-list');
+  const allCats = [['支出カテゴリ', _expCats, 'exp'], ['収入カテゴリ', _incCats, 'inc']];
+  el.innerHTML = allCats.map(([label, cats, ctype]) =>
+    `<div style="margin-bottom:1rem">
+      <div style="font-size:.78rem;font-weight:800;color:var(--muted);margin-bottom:.4rem;letter-spacing:.06em">${label}</div>
+      ${Object.entries(cats).map(([major, subs]) =>
+        `<div style="margin-bottom:.65rem">
+          <div style="font-size:.8rem;font-weight:800;color:var(--sky2);margin-bottom:.3rem">${CAT_ICONS[major]||'📁'} ${major}</div>
+          <div class="tag-edit-wrap" id="sublist-${ctype}-${major}" style="margin-bottom:.3rem">
+            ${subs.map((s,i) =>
+              `<div class="tag-item" draggable="true" data-index="${i}"
+                    ondragstart="onSubDragStart(event,'${ctype}','${major}')"
+                    ondragover="onDragOver(event)"
+                    ondrop="onSubDrop(event,'${ctype}','${major}')"
+                    ondragend="onDragEnd(event)">
+                ☰ ${s}
+                <button class="tag-del" onclick="delSub('${ctype}','${major}',${i})">✕</button>
+              </div>`
+            ).join('')}
+          </div>
+          <div class="tag-add-row">
+            <input class="tag-add-input" id="subadd-${ctype}-${major}" placeholder="中科目を追加">
+            <button class="tag-add-btn" onclick="addSub('${ctype}','${major}')">追加</button>
+          </div>
+        </div>`
+      ).join('')}
+    </div>`
+  ).join('');
+}
+
+let _subDragIdx=-1, _subDragCtype='', _subDragMajor='';
+function onSubDragStart(e, ctype, major) {
+  _subDragIdx  = parseInt(e.currentTarget.dataset.index);
+  _subDragCtype = ctype; _subDragMajor = major;
+  e.currentTarget.classList.add('dragging');
+}
+function onSubDrop(e, ctype, major) {
+  e.preventDefault();
+  const toIdx = parseInt(e.currentTarget.dataset.index);
+  if (_subDragIdx===toIdx || _subDragMajor!==major) return;
+  const cats = ctype==='exp' ? _expCats : _incCats;
+  const list = cats[major];
+  const [moved] = list.splice(_subDragIdx,1);
+  list.splice(toIdx,0,moved);
+  savePrefs(); renderCatManage(); initCatGrid();
+}
+
+function addSub(ctype, major) {
+  const inp = document.getElementById(`subadd-${ctype}-${major}`);
+  const val = inp.value.trim();
+  if (!val) return;
+  const cats = ctype==='exp' ? _expCats : _incCats;
+  cats[major].push(val); inp.value='';
+  savePrefs(); renderCatManage(); initCatGrid();
+  showToast('追加しました','success');
+}
+function delSub(ctype, major, i) {
+  const cats = ctype==='exp' ? _expCats : _incCats;
+  cats[major].splice(i,1);
+  savePrefs(); renderCatManage(); initCatGrid();
+}
+
+// ══════════════════════════════════════════
+// TAB
+// ══════════════════════════════════════════
+function showTab(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');
+  if (name==='summary')  renderSummary();
+  if (name==='history')  renderHistory();
+  if (name==='settings') buildSettingsPage();
+}
+
+// ══════════════════════════════════════════
+// CALENDAR（完全書き直し）
+// ══════════════════════════════════════════
+const WDAYS = ['日','月','火','水','木','金','土'];
+let _calY, _calM;
+
+function initCalState() {
+  const [y,m] = (document.getElementById('e-date').value || today()).split('-').map(Number);
+  _calY = y; _calM = m;
+}
+
+function toggleCal() {
+  const cal = document.getElementById('e-cal');
+  if (cal.style.display === 'block') {
+    closeCal(); return;
+  }
+  initCalState();
+  drawCal();
+  cal.style.display = 'block';
+}
+
+function closeCal() {
+  document.getElementById('e-cal').style.display = 'none';
+}
+
+function drawCal() {
+  const sel = document.getElementById('e-date').value;
+  const td  = today();
+  const firstDay = new Date(_calY, _calM-1, 1).getDay();
+  const daysInM  = new Date(_calY, _calM, 0).getDate();
+  let html = `<div class="cal-hdr">
+    <button class="cal-nav" onclick="calMove(-1);event.stopPropagation()">‹</button>
+    <span class="cal-title">${_calY}年${_calM}月</span>
+    <button class="cal-today-btn" onclick="calSelectDay('${td}');event.stopPropagation()">今日</button>
+    <button class="cal-nav" onclick="calMove(1);event.stopPropagation()">›</button>
+  </div><div class="cal-grid">`;
+  WDAYS.forEach((w,i) => html += `<div class="cal-wday${i===0?' sun':i===6?' sat':''}">${w}</div>`);
+  for (let i=0; i<firstDay; i++) html += '<div></div>';
+  for (let d=1; d<=daysInM; d++) {
+    const ds = `${_calY}-${String(_calM).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    let cls = 'cal-day';
+    if (ds===sel) cls+=' cal-sel';
+    else if (ds===td) cls+=' cal-today';
+    html += `<div class="${cls}" onclick="calSelectDay('${ds}');event.stopPropagation()">${d}</div>`;
+  }
+  html += '</div>';
+  document.getElementById('e-cal').innerHTML = html;
+}
+
+function calMove(dir) {
+  _calM += dir;
+  if (_calM > 12) { _calM=1; _calY++; }
+  if (_calM < 1)  { _calM=12; _calY--; }
+  drawCal();
+}
+
+function calSelectDay(ds) {
+  document.getElementById('e-date').value = ds;
+  const [y,m] = ds.split('-').map(Number);
+  _calY=y; _calM=m;
+  drawCal();
+  closeCal();
+}
+
+// ══════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════
+let _toastTimer;
+function showToast(msg, type='') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show' + (type?' '+type:'');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(()=>el.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>
