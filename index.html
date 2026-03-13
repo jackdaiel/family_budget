@@ -277,10 +277,11 @@ body{font-family:var(--font);background:linear-gradient(160deg,#e8f7fd 0%,#f5fbf
     <!-- 決済 -->
     <div class="form-group" id="pay-wrap">
       <label class="form-label">💳 決済種別</label>
-      <div class="pay-grid">
-        <div class="pay-chip" id="pay-card" onclick="onPayTypeSelect('カード')">💳 カード</div>
-        <div class="pay-chip" id="pay-qr"   onclick="onPayTypeSelect('QR')">📱 QR</div>
-        <div class="pay-chip" id="pay-cash" onclick="onPayTypeSelect('現金')">💴 現金</div>
+      <div class="pay-grid" style="grid-template-columns:repeat(4,1fr)">
+        <div class="pay-chip" id="pay-furikomi" onclick="onPayTypeSelect('口振')">🏦 口振</div>
+        <div class="pay-chip" id="pay-card"     onclick="onPayTypeSelect('カード')">💳 カード</div>
+        <div class="pay-chip" id="pay-qr"       onclick="onPayTypeSelect('QR')">📱 QR</div>
+        <div class="pay-chip" id="pay-cash"     onclick="onPayTypeSelect('現金')">💴 現金</div>
       </div>
       <div id="detail-wrap" style="display:none">
         <div class="detail-chips" id="detail-chips"></div>
@@ -631,10 +632,10 @@ function onPayerSelect(p) {
 // ══════════════════════════════════════════
 function onPayTypeSelect(t) {
   _selPay = t; selDetail = '';
-  ['pay-card','pay-qr','pay-cash'].forEach(id =>
+  ['pay-furikomi','pay-card','pay-qr','pay-cash'].forEach(id =>
     document.getElementById(id).classList.remove('selected')
   );
-  const ids = {カード:'pay-card', QR:'pay-qr', 現金:'pay-cash'};
+  const ids = {口振:'pay-furikomi', カード:'pay-card', QR:'pay-qr', 現金:'pay-cash'};
   if (ids[t]) document.getElementById(ids[t]).classList.add('selected');
 
   const wrap  = document.getElementById('detail-wrap');
@@ -750,7 +751,7 @@ function resetForm() {
   ['pc-kouhi','pc-yoko','pc-dai'].forEach(id =>
     document.getElementById(id).className='payer-chip'
   );
-  ['pay-card','pay-qr','pay-cash'].forEach(id =>
+  ['pay-furikomi','pay-card','pay-qr','pay-cash'].forEach(id =>
     document.getElementById(id).classList.remove('selected')
   );
   document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('selected'));
