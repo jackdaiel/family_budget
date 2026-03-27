@@ -278,10 +278,10 @@ body{font-family:var(--font);background:linear-gradient(160deg,#e8f7fd 0%,#f5fbf
     <div class="form-group" id="pay-wrap">
       <label class="form-label">💳 決済種別</label>
       <div class="pay-grid" style="grid-template-columns:repeat(4,1fr)">
-        <div class="pay-chip" id="pay-furikomi" onclick="onPayTypeSelect('口振')">🏦 口振</div>
         <div class="pay-chip" id="pay-card"     onclick="onPayTypeSelect('カード')">💳 カード</div>
         <div class="pay-chip" id="pay-qr"       onclick="onPayTypeSelect('QR')">📱 QR</div>
         <div class="pay-chip" id="pay-cash"     onclick="onPayTypeSelect('現金')">💴 現金</div>
+        <div class="pay-chip" id="pay-furikomi" onclick="onPayTypeSelect('口振')">🏦 口振</div>
       </div>
       <div id="detail-wrap" style="display:none">
         <div class="detail-chips" id="detail-chips"></div>
@@ -331,14 +331,36 @@ body{font-family:var(--font);background:linear-gradient(160deg,#e8f7fd 0%,#f5fbf
 <!-- 履歴ページ -->
 <div class="page" id="page-history">
   <div class="sec-title">履歴</div>
-  <div class="history-filter" id="history-filter">
-    <div class="filter-btn active" onclick="filterHistory('')"   data-f="">すべて</div>
-    <div class="filter-btn" onclick="filterHistory('支出')"      data-f="支出">支出</div>
-    <div class="filter-btn" onclick="filterHistory('収入')"      data-f="収入">収入</div>
-    <div class="filter-btn" onclick="filterHistory('大')"        data-f="大">大</div>
-    <div class="filter-btn" onclick="filterHistory('洋子')"      data-f="洋子">洋子</div>
-    <div class="filter-btn" onclick="filterHistory('公費')"      data-f="公費">公費</div>
+
+  <!-- 月フィルター -->
+  <div style="margin-bottom:.5rem">
+    <div style="font-size:.7rem;font-weight:700;color:var(--muted);letter-spacing:.08em;margin-bottom:.3rem">📅 月</div>
+    <div class="history-filter" id="hf-month">
+      <div class="filter-btn active" onclick="setHistMonth(-1)" data-m="-1">全月</div>
+    </div>
   </div>
+
+  <!-- 支払者フィルター -->
+  <div style="margin-bottom:.5rem">
+    <div style="font-size:.7rem;font-weight:700;color:var(--muted);letter-spacing:.08em;margin-bottom:.3rem">👤 支払者</div>
+    <div class="history-filter">
+      <div class="filter-btn active" onclick="setHistPayer('')"   data-p="">全員</div>
+      <div class="filter-btn" onclick="setHistPayer('支出')"     data-p="支出">支出のみ</div>
+      <div class="filter-btn" onclick="setHistPayer('収入')"     data-p="収入">収入のみ</div>
+      <div class="filter-btn" onclick="setHistPayer('大')"       data-p="大">大</div>
+      <div class="filter-btn" onclick="setHistPayer('洋子')"     data-p="洋子">洋子</div>
+      <div class="filter-btn" onclick="setHistPayer('公費')"     data-p="公費">公費</div>
+    </div>
+  </div>
+
+  <!-- 大科目フィルター -->
+  <div style="margin-bottom:.7rem">
+    <div style="font-size:.7rem;font-weight:700;color:var(--muted);letter-spacing:.08em;margin-bottom:.3rem">📂 科目</div>
+    <div class="history-filter" id="hf-cat">
+      <div class="filter-btn active" onclick="setHistCat('')" data-c="">すべて</div>
+    </div>
+  </div>
+
   <div id="history-list"></div>
 </div>
 
@@ -457,7 +479,9 @@ let _loaded  = false;
 let _submitting = false;
 let _mode    = 'exp'; // 'exp' | 'inc'
 let selMajor = '', selMinor = '', _selPayer = '', _selPay = '', selDetail = '';
-let histFilter = '';
+let histFilterMonth = -1;  // -1=全月、0=4月...11=3月
+let histFilterPayer = '';   // ''=全員
+let histFilterCat   = '';   // ''=すべて
 let _editingId = null; // 編集中のentry ID
 let sumMonth = -1;
 
@@ -560,7 +584,12 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function changeYear(y) { FY = parseInt(y); sumMonth = -1; renderAll(); }
-function renderAll() { renderSummary(); renderHistory(); }
+function renderAll() {
+  renderSummary();
+  if (document.getElementById('page-history').classList.contains('active')) {
+    buildHistMonthButtons(); buildHistCatButtons(); renderHistory();
+  }
+}
 
 // ══════════════════════════════════════════
 // MODE (収支切り替え)
@@ -833,9 +862,14 @@ function setSumMonth(i) { sumMonth=i; renderSummary(); }
 // ══════════════════════════════════════════
 function renderHistory() {
   let data = _cache.filter(e => isFY(e)).sort((a,b)=>b.date.localeCompare(a.date));
-  if (histFilter==='支出') data = data.filter(e => e.type!=='収入');
-  else if (histFilter==='収入') data = data.filter(e => e.type==='収入');
-  else if (histFilter) data = data.filter(e => e.payer===histFilter);
+  // 月フィルター
+  if (histFilterMonth >= 0) data = data.filter(e => getFMI(e.date) === histFilterMonth);
+  // 支払者・収支フィルター
+  if (histFilterPayer === '支出') data = data.filter(e => e.type !== '収入');
+  else if (histFilterPayer === '収入') data = data.filter(e => e.type === '収入');
+  else if (histFilterPayer) data = data.filter(e => e.payer === histFilterPayer);
+  // 大科目フィルター
+  if (histFilterCat) data = data.filter(e => e.major === histFilterCat);
 
   const list = document.getElementById('history-list');
   if (!data.length) {
@@ -867,12 +901,49 @@ function renderHistory() {
   }).join('');
 }
 
-function filterHistory(f) {
-  histFilter = f;
-  document.querySelectorAll('.filter-btn').forEach(b =>
-    b.classList.toggle('active', b.dataset.f===f)
+function setHistMonth(m) {
+  histFilterMonth = m;
+  document.querySelectorAll('#hf-month .filter-btn').forEach(b =>
+    b.classList.toggle('active', parseInt(b.dataset.m) === m)
   );
   renderHistory();
+}
+function setHistPayer(p) {
+  histFilterPayer = p;
+  document.querySelectorAll('[data-p]').forEach(b =>
+    b.classList.toggle('active', b.dataset.p === p)
+  );
+  renderHistory();
+}
+function setHistCat(cat) {
+  histFilterCat = cat;
+  document.querySelectorAll('#hf-cat .filter-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.c === cat)
+  );
+  renderHistory();
+}
+function buildHistCatButtons() {
+  // 大科目ボタンをキャッシュから動的生成
+  const cats = [...new Set(_cache.filter(e=>isFY(e)).map(e=>e.major))].filter(Boolean);
+  const el = document.getElementById('hf-cat');
+  if (!el) return;
+  const allBtn = `<div class="filter-btn active" onclick="setHistCat('')" data-c="">すべて</div>`;
+  el.innerHTML = allBtn + cats.map(cat =>
+    `<div class="filter-btn" onclick="setHistCat('${cat}')" data-c="${cat}">${CAT_ICONS[cat]||'📁'} ${cat}</div>`
+  ).join('');
+  // 現在選択中のものをactive
+  el.querySelectorAll('.filter-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.c === histFilterCat)
+  );
+}
+function buildHistMonthButtons() {
+  const MONTHS_JP=['４月','５月','６月','７月','８月','９月','１０月','１１月','１２月','１月','２月','３月'];
+  const el = document.getElementById('hf-month');
+  if (!el) return;
+  el.innerHTML = `<div class="filter-btn ${histFilterMonth===-1?'active':''}" onclick="setHistMonth(-1)" data-m="-1">全月</div>` +
+    MONTHS_JP.map((m,i) =>
+      `<div class="filter-btn ${histFilterMonth===i?'active':''}" onclick="setHistMonth(${i})" data-m="${i}">${m}</div>`
+    ).join('');
 }
 
 async function delEntry(id) {
@@ -1047,7 +1118,7 @@ function showTab(name) {
   document.getElementById('page-'+name).classList.add('active');
   document.getElementById('tab-'+name).classList.add('active');
   if (name==='summary')  renderSummary();
-  if (name==='history')  renderHistory();
+  if (name==='history')  { buildHistMonthButtons(); buildHistCatButtons(); renderHistory(); }
   if (name==='settings') buildSettingsPage();
 }
 
