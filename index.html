@@ -478,9 +478,9 @@ const CAT_ICONS = {
 // STATE
 // ══════════════════════════════════════════
 function calcCurrentFY() {
+  // 年度: 4月1日〜翌3月31日（カレンダー月）
   const now = new Date(new Date().getTime() + 9*60*60*1000);
-  let m = now.getMonth()+1, d = now.getDate(), y = now.getFullYear();
-  if (d <= 20) { m--; if (m === 0) { m = 12; y--; } }
+  const m = now.getMonth() + 1, y = now.getFullYear();
   return m >= 4 ? y : y - 1;
 }
 let FY = calcCurrentFY();
