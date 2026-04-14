@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#38b6e8">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Family Budget</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,700;9..40,800&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
@@ -120,6 +123,9 @@ body{font-family:var(--font);background:linear-gradient(160deg,#e8f7fd 0%,#f5fbf
 .m-btn.active{background:var(--sky);color:#fff;border-color:var(--sky);}
 .summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:.75rem;}
 .stat-card{background:var(--white);border-radius:var(--radius-sm);border:1px solid var(--border);padding:.75rem .9rem;box-shadow:0 2px 8px rgba(56,182,232,.1);}
+.stat-card-inc{border-left:3px solid var(--inc-green);}
+.stat-card-exp{border-left:3px solid var(--coral);}
+.stat-card-bal{border-left:3px solid var(--sky2);}
 .stat-label{font-size:.7rem;font-weight:700;color:var(--muted);margin-bottom:.18rem;}
 .stat-value{font-size:1.18rem;font-weight:800;color:var(--ink);}
 .stat-value.v-exp{color:var(--coral);}
@@ -182,6 +188,7 @@ body{font-family:var(--font);background:linear-gradient(160deg,#e8f7fd 0%,#f5fbf
 .tag-edit-wrap{display:flex;flex-wrap:wrap;gap:.32rem;}
 .tag-item{display:flex;align-items:center;background:var(--sky-lt);border:1.5px solid var(--border);border-radius:20px;padding:.2rem .55rem;font-size:.8rem;font-weight:600;color:var(--sky2);cursor:grab;user-select:none;}
 .tag-item.dragging{opacity:.4;}
+.tag-item.drag-over{border-color:var(--sky);background:var(--sky-lt);}
 .tag-del{background:none;border:none;color:var(--muted);cursor:pointer;margin-left:.28rem;font-size:.82rem;line-height:1;padding:0;}
 .tag-del:hover{color:var(--coral);}
 .tag-add-row{display:flex;gap:.38rem;margin-top:.45rem;}
@@ -378,7 +385,7 @@ body{font-family:var(--font);background:linear-gradient(160deg,#e8f7fd 0%,#f5fbf
 <div class="page" id="page-settings">
   <div class="sec-title">候補の管理</div>
   <div class="setting-item">
-    <div class="setting-title">💳 カード詳細 <span style="font-size:.7rem;color:var(--muted);font-weight:400">（ドラッグで並び替え）</span></div>
+    <div class="setting-title">💳 カード詳細</div>
     <div class="tag-edit-wrap" id="card-tags" data-type="card"></div>
     <div class="tag-add-row">
       <input class="tag-add-input" id="card-add-input" placeholder="例：住信SBIcard">
@@ -386,7 +393,7 @@ body{font-family:var(--font);background:linear-gradient(160deg,#e8f7fd 0%,#f5fbf
     </div>
   </div>
   <div class="setting-item">
-    <div class="setting-title">📱 QR・電子マネー詳細 <span style="font-size:.7rem;color:var(--muted);font-weight:400">（ドラッグで並び替え）</span></div>
+    <div class="setting-title">📱 QR・電子マネー詳細</div>
     <div class="tag-edit-wrap" id="qr-tags" data-type="qr"></div>
     <div class="tag-add-row">
       <input class="tag-add-input" id="qr-add-input" placeholder="例：iD">
@@ -394,7 +401,7 @@ body{font-family:var(--font);background:linear-gradient(160deg,#e8f7fd 0%,#f5fbf
     </div>
   </div>
   <div class="setting-item">
-    <div class="setting-title">📂 カテゴリ管理（中科目の追加・削除） <span style="font-size:.7rem;color:var(--muted);font-weight:400">（ドラッグで並び替え）</span></div>
+    <div class="setting-title">📂 カテゴリ管理（中科目の追加・削除）</div>
     <div id="cat-manage-list"></div>
   </div>
 
@@ -427,6 +434,20 @@ body{font-family:var(--font);background:linear-gradient(160deg,#e8f7fd 0%,#f5fbf
       <input type="file" accept=".csv" id="import-file" style="display:none" onchange="onImportFile(this)">
     </label>
     <div id="import-preview" style="display:none;margin-top:.7rem"></div>
+  </div>
+
+  <!-- 候補の同期 -->
+  <div class="sec-title">候補の同期</div>
+  <div class="setting-item" style="background:linear-gradient(135deg,var(--sky-lt),#f0faff);border-color:var(--sky)">
+    <div class="setting-title" style="color:var(--sky2)">🔄 端末間で候補を同期</div>
+    <p style="font-size:.75rem;color:var(--muted);margin-bottom:.65rem;line-height:1.5">MacとiPhoneでカード・QR・カテゴリ・メモの候補を一致させます。一方でエクスポートし、もう一方でインポートしてください。</p>
+    <div style="display:flex;gap:.5rem">
+      <button class="tag-add-btn" style="flex:1;padding:.55rem;border-radius:10px;font-size:.84rem;background:var(--sky2)" onclick="exportPrefs()">📤 候補をエクスポート</button>
+      <label class="tag-add-btn" style="flex:1;padding:.55rem;border-radius:10px;font-size:.84rem;background:#5a7a9a;cursor:pointer;text-align:center;display:flex;align-items:center;justify-content:center">
+        📥 候補をインポート
+        <input type="file" accept=".json" style="display:none" onchange="importPrefs(this)">
+      </label>
+    </div>
   </div>
 </div>
 
@@ -832,13 +853,29 @@ function renderSummary() {
   const dai    = exp.filter(e=>e.payer==='大').reduce((a,e)=>a+e.amount,0);
   const yoko   = exp.filter(e=>e.payer==='洋子').reduce((a,e)=>a+e.amount,0);
 
+  // 収支サマリーカード（3列：収入・支出・収支を同サイズで）
   document.getElementById('stat-cards').innerHTML = `
-    <div class="stat-card"><div class="stat-label">支出合計</div><div class="stat-value v-exp">${fmtAmt(totExp)}</div></div>
-    <div class="stat-card"><div class="stat-label">収入合計</div><div class="stat-value v-inc">${fmtAmt(totInc)}</div></div>
-    <div class="stat-card"><div class="stat-label">収支</div><div class="stat-value ${bal>=0?'v-bal-pos':'v-bal-neg'}">${bal>=0?'+':'−'}${fmtAmt(bal)}</div></div>
-    <div class="stat-card"><div class="stat-label">件数</div><div class="stat-value">${filtered.length}件</div></div>
-    <div class="stat-card"><div class="stat-label">大（支出）</div><div class="stat-value v-dai">${fmtAmt(dai)}</div></div>
-    <div class="stat-card"><div class="stat-label">洋子（支出）</div><div class="stat-value v-yoko">${fmtAmt(yoko)}</div></div>
+    <div class="stat-card stat-card-inc">
+      <div class="stat-label">💰 収入</div>
+      <div class="stat-value v-inc">+${fmtAmt(totInc)}</div>
+    </div>
+    <div class="stat-card stat-card-exp">
+      <div class="stat-label">💸 支出</div>
+      <div class="stat-value v-exp">${fmtAmt(totExp)}</div>
+    </div>
+    <div class="stat-card stat-card-bal" style="grid-column:span 2">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div class="stat-label">📊 収支</div>
+          <div class="stat-value ${bal>=0?'v-bal-pos':'v-bal-neg'}" style="font-size:1.4rem">${bal>=0?'+':'−'}${fmtAmt(bal)}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:.7rem;color:var(--muted);font-weight:700;margin-bottom:.15rem">${filtered.length}件</div>
+          <div style="font-size:.72rem;color:var(--sky2);font-weight:700">大 ${fmtAmt(dai)}</div>
+          <div style="font-size:.72rem;color:#e04494;font-weight:700">洋子 ${fmtAmt(yoko)}</div>
+        </div>
+      </div>
+    </div>
   `;
 
   // カテゴリ別（支出のみ）
@@ -1053,14 +1090,23 @@ function renderDragList(elId, list, type) {
   el.innerHTML = list.map((t,i) =>
     `<div class="tag-item" draggable="true" data-index="${i}" data-type="${type}"
           ondragstart="onDragStart(event)" ondragover="onDragOver(event)"
-          ondrop="onDrop(event,'${type}')" ondragend="onDragEnd(event)">
+          ondrop="onDrop(event,'${type}')" ondragend="onDragEnd(event)"
+          ontouchstart="onTouchDragStart(event,'${type}',${i})"
+          ontouchmove="onTouchDragMove(event)"
+          ontouchend="onTouchDragEnd(event)">
       ☰ ${t}
       <button class="tag-del" onclick="delTag('${type}',${i})">✕</button>
     </div>`
   ).join('');
 }
 
+// ══════════════════════════════════════════
+// ドラッグ並び替え（PC: mouse drag / iOS: touch）
+// ══════════════════════════════════════════
 let _dragIdx = -1;
+let _touchDragEl = null, _touchDragType = null, _touchDragIdx = -1;
+let _touchPlaceholder = null;
+
 function onDragStart(e) {
   _dragIdx = parseInt(e.currentTarget.dataset.index);
   e.currentTarget.classList.add('dragging');
@@ -1077,6 +1123,46 @@ function onDrop(e, type) {
   renderDragList(type==='card'?'card-tags':'qr-tags', list, type);
 }
 function onDragEnd(e) { e.currentTarget.classList.remove('dragging'); }
+
+// タッチドラッグ
+function onTouchDragStart(e, type, idx) {
+  _touchDragType = type;
+  _touchDragIdx  = idx;
+  _touchDragEl   = e.currentTarget;
+  _touchDragEl.classList.add('dragging');
+  e.preventDefault();
+}
+function onTouchDragMove(e) {
+  if (!_touchDragEl) return;
+  e.preventDefault();
+  const touch = e.touches[0];
+  const els = document.elementsFromPoint(touch.clientX, touch.clientY);
+  const target = els.find(el => el !== _touchDragEl && el.classList.contains('tag-item') && el.dataset.type === _touchDragType);
+  if (target) {
+    document.querySelectorAll('.tag-item').forEach(el => el.classList.remove('drag-over'));
+    target.classList.add('drag-over');
+  }
+}
+function onTouchDragEnd(e) {
+  if (!_touchDragEl) return;
+  const touch = e.changedTouches[0];
+  const els = document.elementsFromPoint(touch.clientX, touch.clientY);
+  const target = els.find(el => el !== _touchDragEl && el.classList.contains('tag-item') && el.dataset.type === _touchDragType);
+  if (target) {
+    const toIdx = parseInt(target.dataset.index);
+    if (_touchDragIdx !== toIdx) {
+      const list = _touchDragType==='card' ? _cards : _qrs;
+      const [moved] = list.splice(_touchDragIdx, 1);
+      list.splice(toIdx, 0, moved);
+      savePrefs();
+      renderDragList(_touchDragType==='card'?'card-tags':'qr-tags', list, _touchDragType);
+    }
+  }
+  document.querySelectorAll('.tag-item').forEach(el => {
+    el.classList.remove('dragging','drag-over');
+  });
+  _touchDragEl = null; _touchDragType = null; _touchDragIdx = -1;
+}
 
 function addTag(type) {
   const inp = document.getElementById(type+'-add-input');
@@ -1362,6 +1448,53 @@ async function execImport(mode) {
     showToast('通信エラー', 'error');
   }
   if (btn) { btn.disabled = false; }
+}
+
+// ══════════════════════════════════════════
+// 候補同期（エクスポート・インポート）
+// ══════════════════════════════════════════
+function exportPrefs() {
+  const data = {
+    kz_expcats: _expCats,
+    kz_inccats: _incCats,
+    kz_cards:   _cards,
+    kz_qrs:     _qrs,
+    kz_memos:   _memos,
+    exported:   new Date().toISOString(),
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
+  a.download = `family_budget_prefs_${today()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('候補設定をエクスポートしました', 'success');
+}
+
+function importPrefs(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!confirm('現在の候補設定を上書きしますか？\n\nエクスポート日時: ' + (data.exported || '不明'))) return;
+      if (data.kz_expcats) { _expCats = data.kz_expcats; }
+      if (data.kz_inccats) { _incCats = data.kz_inccats; }
+      if (data.kz_cards)   { _cards   = data.kz_cards; }
+      if (data.kz_qrs)     { _qrs     = data.kz_qrs; }
+      if (data.kz_memos)   { _memos   = data.kz_memos; }
+      savePrefs();
+      buildSettingsPage();
+      initCatGrid();
+      showToast('候補設定をインポートしました', 'success');
+    } catch(err) {
+      showToast('ファイルの読み込みに失敗しました', 'error');
+    }
+    input.value = '';
+  };
+  reader.readAsText(file);
 }
 
 // ══════════════════════════════════════════
