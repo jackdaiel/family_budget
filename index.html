@@ -171,15 +171,18 @@ body{font-family:var(--font);background:linear-gradient(160deg,#e8f7fd 0%,#f5fbf
 .del-btn{background:none;border:none;color:#ccd8e0;font-size:1rem;cursor:pointer;padding:.2rem;border-radius:6px;transition:color .15s;flex-shrink:0;}
 .del-btn:active{color:var(--coral);}
 .empty-msg{text-align:center;color:var(--muted);padding:2.5rem 1rem;font-size:.9rem;font-weight:600;}
-.hist-total-bar{background:linear-gradient(135deg,var(--sky),var(--sky2));border-radius:var(--radius);padding:.85rem 1.1rem;margin-bottom:.7rem;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 16px rgba(56,182,232,.3);position:sticky;top:108px;z-index:50;}
-.hist-total-bar.inc-bar{background:linear-gradient(135deg,var(--mint),var(--inc-green));box-shadow:0 4px 16px rgba(46,216,168,.3);}
-.hist-total-bar.mix-bar{background:linear-gradient(135deg,#7b4fff,#5b2de8);box-shadow:0 4px 16px rgba(123,79,255,.3);}
-.htb-left{display:flex;flex-direction:column;gap:.18rem;}
-.htb-label{font-size:.7rem;font-weight:700;color:rgba(255,255,255,.75);letter-spacing:.1em;text-transform:uppercase;}
-.htb-amount{font-size:1.45rem;font-weight:800;color:#fff;letter-spacing:.02em;}
-.htb-right{display:flex;flex-direction:column;align-items:flex-end;gap:.25rem;}
-.htb-sub{font-size:.72rem;font-weight:600;color:rgba(255,255,255,.8);}
-.htb-count{font-size:.7rem;color:rgba(255,255,255,.65);font-weight:500;}
+.hist-total-bar{border-radius:var(--radius);padding:.8rem 1rem;margin-bottom:.7rem;box-shadow:0 4px 16px rgba(56,182,232,.3);position:sticky;top:108px;z-index:50;}
+.hist-total-bar.bar-exp{background:linear-gradient(135deg,var(--sky),var(--sky2));}
+.hist-total-bar.bar-inc{background:linear-gradient(135deg,var(--mint),var(--inc-green));}
+.hist-total-bar.bar-mix{background:linear-gradient(135deg,#2a6faa,#1a4f88);}
+.htb-filter{font-size:.68rem;font-weight:700;color:rgba(255,255,255,.7);letter-spacing:.08em;margin-bottom:.5rem;}
+.htb-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.4rem;}
+.htb-cell{display:flex;flex-direction:column;align-items:center;background:rgba(255,255,255,.12);border-radius:8px;padding:.45rem .3rem;}
+.htb-cell-label{font-size:.65rem;font-weight:700;color:rgba(255,255,255,.75);margin-bottom:.18rem;letter-spacing:.04em;}
+.htb-cell-val{font-size:1.05rem;font-weight:800;color:#fff;line-height:1;}
+.htb-cell-val.big{font-size:1.15rem;}
+.htb-footer{display:flex;justify-content:flex-end;margin-top:.35rem;}
+.htb-count{font-size:.68rem;color:rgba(255,255,255,.6);font-weight:500;}
 .empty-msg .ei{font-size:2.2rem;margin-bottom:.4rem;}
 
 /* SETTINGS */
@@ -937,30 +940,28 @@ function renderHistory() {
   const cLabel = histFilterCat || '';
   const filterLabel = [mLabel, pLabel, cLabel].filter(Boolean).join(' · ') || 'すべて';
 
-  let amountHtml, subHtml;
-  if (hasInc && hasExp) {
-    // 収支混在
-    amountHtml = `収支 ${totInc>=totExp?'+':'−'}${fmtAmt(totInc-totExp)}`;
-    subHtml = `<div class="htb-sub">収入 +${fmtAmt(totInc)}</div>
-               <div class="htb-sub">支出 ${fmtAmt(totExp)}</div>`;
-  } else if (hasInc) {
-    amountHtml = `+${fmtAmt(totInc)}`;
-    subHtml = '';
-  } else {
-    amountHtml = fmtAmt(totExp);
-    subHtml = '';
-  }
+  const bal = totInc - totExp;
+  const barClass2 = hasInc && hasExp ? 'bar-mix' : hasInc ? 'bar-inc' : 'bar-exp';
+  const balSign = bal >= 0 ? '+' : '−';
 
   bar.style.display = 'block';
-  bar.innerHTML = `<div class="hist-total-bar ${barClass}">
-    <div class="htb-left">
-      <div class="htb-label">${filterLabel}</div>
-      <div class="htb-amount">${amountHtml}</div>
+  bar.innerHTML = `<div class="hist-total-bar ${barClass2}">
+    <div class="htb-filter">${filterLabel}</div>
+    <div class="htb-grid">
+      <div class="htb-cell">
+        <div class="htb-cell-label">💰 収入</div>
+        <div class="htb-cell-val">+${fmtAmt(totInc)}</div>
+      </div>
+      <div class="htb-cell">
+        <div class="htb-cell-label">💸 支出</div>
+        <div class="htb-cell-val">${fmtAmt(totExp)}</div>
+      </div>
+      <div class="htb-cell">
+        <div class="htb-cell-label">📊 収支</div>
+        <div class="htb-cell-val big">${balSign}${fmtAmt(Math.abs(bal))}</div>
+      </div>
     </div>
-    <div class="htb-right">
-      ${subHtml}
-      <div class="htb-count">${data.length}件</div>
-    </div>
+    <div class="htb-footer"><div class="htb-count">${data.length}件</div></div>
   </div>`;
   const catBg = m => ({'住居費':'#dff0ff','光熱水費':'#fff8d4','食費':'#e8fdf0','日用品費':'#f0e8ff','通信費':'#e0f8ff','サブスク費':'#ffe8f8','交際費':'#fff0e8','生活費':'#e6f9f0'}[m]||'#f0f8ff');
   list.innerHTML = data.map(e => {
