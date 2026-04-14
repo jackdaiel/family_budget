@@ -2,8 +2,8 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<meta name="theme-color" content="#38b6e8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1a9fd4">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Family Budget</title>
@@ -32,7 +32,7 @@
 body{font-family:var(--font);background:linear-gradient(160deg,#e8f7fd 0%,#f5fbff 50%,#eaf6f0 100%);min-height:100vh;color:var(--ink);font-size:15px;}
 
 /* HEADER */
-.app-header{background:linear-gradient(135deg,var(--sky) 0%,var(--sky2) 60%,#1abbcc 100%);padding:.85rem 1rem .75rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 3px 16px rgba(26,159,212,.35);}
+.app-header{background:linear-gradient(135deg,var(--sky) 0%,var(--sky2) 60%,#1abbcc 100%);padding:calc(.85rem + env(safe-area-inset-top)) 1rem .75rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 3px 16px rgba(26,159,212,.35);}
 .app-title{font-size:1.2rem;font-weight:800;color:#fff;letter-spacing:.04em;display:flex;align-items:center;gap:.4rem;cursor:pointer;user-select:none;}
 .app-title:active{opacity:.8;}
 .header-right{display:flex;align-items:center;gap:.45rem;}
@@ -41,7 +41,7 @@ body{font-family:var(--font);background:linear-gradient(160deg,#e8f7fd 0%,#f5fbf
 .reload-btn{background:rgba(255,255,255,.2);border:1.5px solid rgba(255,255,255,.5);color:#fff;border-radius:8px;padding:.26rem .55rem;font-size:.88rem;cursor:pointer;font-family:var(--font);}
 
 /* TAB */
-.tab-nav{display:flex;background:var(--white);border-bottom:2px solid var(--border);position:sticky;top:56px;z-index:90;box-shadow:0 2px 8px rgba(56,182,232,.08);}
+.tab-nav{display:flex;background:var(--white);border-bottom:2px solid var(--border);position:sticky;top:calc(56px + env(safe-area-inset-top));z-index:90;box-shadow:0 2px 8px rgba(56,182,232,.08);}
 .tab-btn{flex:1;padding:.6rem .2rem;text-align:center;font-size:.75rem;font-weight:700;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;transition:all .2s;letter-spacing:.01em;font-family:var(--font);}
 .tab-btn.active{color:var(--sky2);border-bottom-color:var(--sky);}
 .tab-btn .ti{font-size:1rem;display:block;margin-bottom:.08rem;}
@@ -171,18 +171,8 @@ body{font-family:var(--font);background:linear-gradient(160deg,#e8f7fd 0%,#f5fbf
 .del-btn{background:none;border:none;color:#ccd8e0;font-size:1rem;cursor:pointer;padding:.2rem;border-radius:6px;transition:color .15s;flex-shrink:0;}
 .del-btn:active{color:var(--coral);}
 .empty-msg{text-align:center;color:var(--muted);padding:2.5rem 1rem;font-size:.9rem;font-weight:600;}
-.hist-total-bar{border-radius:var(--radius);padding:.8rem 1rem;margin-bottom:.7rem;box-shadow:0 4px 16px rgba(56,182,232,.3);position:sticky;top:108px;z-index:50;}
-.hist-total-bar.bar-exp{background:linear-gradient(135deg,var(--sky),var(--sky2));}
-.hist-total-bar.bar-inc{background:linear-gradient(135deg,var(--mint),var(--inc-green));}
-.hist-total-bar.bar-mix{background:linear-gradient(135deg,#2a6faa,#1a4f88);}
-.htb-filter{font-size:.68rem;font-weight:700;color:rgba(255,255,255,.7);letter-spacing:.08em;margin-bottom:.5rem;}
-.htb-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.4rem;}
-.htb-cell{display:flex;flex-direction:column;align-items:center;background:rgba(255,255,255,.12);border-radius:8px;padding:.45rem .3rem;}
-.htb-cell-label{font-size:.65rem;font-weight:700;color:rgba(255,255,255,.75);margin-bottom:.18rem;letter-spacing:.04em;}
-.htb-cell-val{font-size:1.05rem;font-weight:800;color:#fff;line-height:1;}
-.htb-cell-val.big{font-size:1.15rem;}
-.htb-footer{display:flex;justify-content:flex-end;margin-top:.35rem;}
-.htb-count{font-size:.68rem;color:rgba(255,255,255,.6);font-weight:500;}
+.hist-total-wrap{margin-bottom:.7rem;}
+.htb-filter-label{font-size:.68rem;font-weight:700;color:var(--muted);letter-spacing:.08em;margin-bottom:.4rem;padding-left:.1rem;}
 .empty-msg .ei{font-size:2.2rem;margin-bottom:.4rem;}
 
 /* SETTINGS */
@@ -380,7 +370,7 @@ body{font-family:var(--font);background:linear-gradient(160deg,#e8f7fd 0%,#f5fbf
     </div>
   </div>
 
-  <div id="history-total-bar" style="display:none"></div>
+  <div id="history-total-bar" class="hist-total-wrap" style="display:none"></div>
   <div id="history-list"></div>
 </div>
 
@@ -941,28 +931,32 @@ function renderHistory() {
   const filterLabel = [mLabel, pLabel, cLabel].filter(Boolean).join(' · ') || 'すべて';
 
   const bal = totInc - totExp;
-  const barClass2 = hasInc && hasExp ? 'bar-mix' : hasInc ? 'bar-inc' : 'bar-exp';
   const balSign = bal >= 0 ? '+' : '−';
 
   bar.style.display = 'block';
-  bar.innerHTML = `<div class="hist-total-bar ${barClass2}">
-    <div class="htb-filter">${filterLabel}</div>
-    <div class="htb-grid">
-      <div class="htb-cell">
-        <div class="htb-cell-label">💰 収入</div>
-        <div class="htb-cell-val">+${fmtAmt(totInc)}</div>
+  bar.innerHTML = `
+    <div class="htb-filter-label">${filterLabel}</div>
+    <div class="summary-grid">
+      <div class="stat-card stat-card-inc">
+        <div class="stat-label">💰 収入</div>
+        <div class="stat-value v-inc">+${fmtAmt(totInc)}</div>
       </div>
-      <div class="htb-cell">
-        <div class="htb-cell-label">💸 支出</div>
-        <div class="htb-cell-val">${fmtAmt(totExp)}</div>
+      <div class="stat-card stat-card-exp">
+        <div class="stat-label">💸 支出</div>
+        <div class="stat-value v-exp">${fmtAmt(totExp)}</div>
       </div>
-      <div class="htb-cell">
-        <div class="htb-cell-label">📊 収支</div>
-        <div class="htb-cell-val big">${balSign}${fmtAmt(Math.abs(bal))}</div>
+      <div class="stat-card stat-card-bal" style="grid-column:span 2">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <div class="stat-label">📊 収支</div>
+            <div class="stat-value ${bal>=0?'v-bal-pos':'v-bal-neg'}" style="font-size:1.4rem">${balSign}${fmtAmt(Math.abs(bal))}</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:.7rem;color:var(--muted);font-weight:700">${data.length}件</div>
+          </div>
+        </div>
       </div>
-    </div>
-    <div class="htb-footer"><div class="htb-count">${data.length}件</div></div>
-  </div>`;
+    </div>`;
   const catBg = m => ({'住居費':'#dff0ff','光熱水費':'#fff8d4','食費':'#e8fdf0','日用品費':'#f0e8ff','通信費':'#e0f8ff','サブスク費':'#ffe8f8','交際費':'#fff0e8','生活費':'#e6f9f0'}[m]||'#f0f8ff');
   list.innerHTML = data.map(e => {
     const isInc = e.type==='収入';
