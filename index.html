@@ -462,11 +462,12 @@ const ACCESS_KEY = 'kazoku2026secure';
 const DEFAULT_EXP_CATS = {
   '住居費':    ['マンション管理費','固定資産税','その他'],
   '光熱水費':  ['電気代','ガス代','水道代'],
-  '食費':      ['食料品','酒類','外食','カフェ'],
+  '食費':      ['食料品','酒類'],
+  '外食費':    ['飲み屋','カフェ','朝食','昼食','夕食','コンビニ'],
   '日用品費':  ['日用品'],
   '通信費':    ['携帯電話','NET+SP','NHK受信料'],
   'サブスク費': ['Spotify','YouTube'],
-  '交際費':    ['飲み会','プレゼント','冠婚葬祭','会費'],
+  '交際費':    ['プレゼント','冠婚葬祭','会費'],
   'その他':    ['その他'],
 };
 const DEFAULT_INC_CATS = {
@@ -477,7 +478,8 @@ const DEFAULT_QR    = ['楽天Pay','iD','PayPay','Suica'];
 const DEFAULT_MEMOS = {
   '住居費':    ['管理組合'],
   '光熱水費':  ['東北電力','東北ガス','仙台市水道'],
-  '食費':      ['ヨークベニマル','イオン','コープ','コンビニ'],
+  '食費':      ['ヨークベニマル','イオン','コープ'],
+  '外食費':    ['飲み屋','カフェ','ランチ'],
   '日用品費':  ['ドラッグストア','ネット通販'],
   '通信費':    ['ソフトバンク','楽天モバイル'],
   'サブスク費': ['月額','年額'],
@@ -486,7 +488,7 @@ const DEFAULT_MEMOS = {
   '生活費': ['毎月振込','賞与'],
 };
 const CAT_ICONS = {
-  '住居費':'🏠','光熱水費':'💡','食費':'🍱','日用品費':'🛒',
+  '住居費':'🏠','光熱水費':'💡','食費':'🍱','外食費':'🍽️','日用品費':'🛒',
   '通信費':'📡','サブスク費':'🎵','交際費':'🥂','その他':'📦',
   '生活費':'💰',
 };
@@ -512,12 +514,8 @@ let histFilterCat   = '';   // ''=すべて
 let _editingId = null; // 編集中のentry ID
 let sumMonth = -1;
 
-// バージョン管理：変更時にlocalStorageをリセット
+// バージョン管理（カテゴリマイグレーションのみ、候補は保持）
 const PREFS_VER = 'v4';
-if (localStorage.getItem('kz_ver') !== PREFS_VER) {
-  ['kz_expcats','kz_inccats','kz_cards','kz_qrs','kz_memos'].forEach(k => localStorage.removeItem(k));
-  localStorage.setItem('kz_ver', PREFS_VER);
-}
 let _expCats  = JSON.parse(localStorage.getItem('kz_expcats') || 'null') || JSON.parse(JSON.stringify(DEFAULT_EXP_CATS));
 let _incCats  = JSON.parse(localStorage.getItem('kz_inccats') || 'null') || JSON.parse(JSON.stringify(DEFAULT_INC_CATS));
 let _cards    = JSON.parse(localStorage.getItem('kz_cards')   || 'null') || [...DEFAULT_CARDS];
@@ -593,11 +591,46 @@ const today = () => {
 // INIT
 // ══════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
-  // マイグレーション: 「ネット回線」→「NET+SP」
-  if (_expCats['通信費']) {
-    const idx = _expCats['通信費'].indexOf('ネット回線');
-    if (idx !== -1) {
-      _expCats['通信費'][idx] = 'NET+SP';
+  // ── カテゴリ強制マイグレーション ──
+  // 毎回チェックして必要なら修正（べき等）
+  {
+    let changed = false;
+    // NET+SP
+    if (_expCats['通信費'] && _expCats['通信費'].includes('ネット回線')) {
+      _expCats['通信費'] = _expCats['通信費'].map(s => s === 'ネット回線' ? 'NET+SP' : s);
+      changed = true;
+    }
+    // 食費から外食・カフェを除去
+    if (_expCats['食費'] && (_expCats['食費'].includes('外食') || _expCats['食費'].includes('カフェ'))) {
+      _expCats['食費'] = _expCats['食費'].filter(s => s !== '外食' && s !== 'カフェ');
+      if (!_expCats['食費'].length) _expCats['食費'] = ['食料品','酒類'];
+      changed = true;
+    }
+    // 外食費を強制セット（毎回正しい値を保証）
+    const correctGaishoku = ['飲み屋','カフェ','朝食','昼食','夕食','コンビニ'];
+    if (!_expCats['外食費'] || JSON.stringify(_expCats['外食費']) !== JSON.stringify(correctGaishoku)) {
+      _expCats['外食費'] = correctGaishoku;
+      changed = true;
+    }
+    // 交際費から飲み会を除去
+    if (_expCats['交際費'] && _expCats['交際費'].includes('飲み会')) {
+      _expCats['交際費'] = _expCats['交際費'].filter(s => s !== '飲み会');
+      if (!_expCats['交際費'].length) _expCats['交際費'] = ['プレゼント','冠婚葬祭','会費'];
+      changed = true;
+    }
+    // カテゴリ順序を正しく保証（外食費を食費の直後に配置）
+    const correctOrder = ['住居費','光熱水費','食費','外食費','日用品費','通信費','サブスク費','交際費','その他'];
+    const currentKeys = Object.keys(_expCats);
+    const needsReorder = correctOrder.some((k,i) => currentKeys[i] !== k && _expCats[k]);
+    if (needsReorder) {
+      const reordered = {};
+      correctOrder.forEach(k => { if (_expCats[k]) reordered[k] = _expCats[k]; });
+      // 上記リストにないカテゴリも保持
+      Object.keys(_expCats).forEach(k => { if (!reordered[k]) reordered[k] = _expCats[k]; });
+      _expCats = reordered;
+      changed = true;
+    }
+    if (changed) {
       savePrefs();
     }
   }
@@ -646,7 +679,7 @@ function initCatGrid() {
   // 既選択を復元
   if (selMajor) {
     grid.querySelectorAll('.cat-chip').forEach(c =>
-      c.classList.toggle('selected', c.textContent.includes(selMajor))
+      c.classList.toggle('selected', c.textContent.trim() === `${CAT_ICONS[selMajor]||'📁'} ${selMajor}`)
     );
   }
 }
@@ -654,7 +687,7 @@ function initCatGrid() {
 function selMajorFn(m) {
   selMajor = m; selMinor = '';
   document.querySelectorAll('#major-grid .cat-chip').forEach(c =>
-    c.classList.toggle('selected', c.textContent.trim().includes(m))
+    c.classList.toggle('selected', c.textContent.trim() === `${CAT_ICONS[m]||'📁'} ${m}`)
   );
   const cats = _mode === 'exp' ? _expCats : _incCats;
   const subs = cats[m] || [];
@@ -960,7 +993,7 @@ function renderHistory() {
         </div>
       </div>
     </div>`;
-  const catBg = m => ({'住居費':'#dff0ff','光熱水費':'#fff8d4','食費':'#e8fdf0','日用品費':'#f0e8ff','通信費':'#e0f8ff','サブスク費':'#ffe8f8','交際費':'#fff0e8','生活費':'#e6f9f0'}[m]||'#f0f8ff');
+  const catBg = m => ({'住居費':'#dff0ff','光熱水費':'#fff8d4','食費':'#e8fdf0','外食費':'#fff3e0','日用品費':'#f0e8ff','通信費':'#e0f8ff','サブスク費':'#ffe8f8','交際費':'#fff0e8','生活費':'#e6f9f0'}[m]||'#f0f8ff');
   list.innerHTML = data.map(e => {
     const isInc = e.type==='収入';
     return `<div class="entry-card">
